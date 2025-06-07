@@ -4,49 +4,42 @@ const InterviewSchema = new mongoose.Schema({
     position: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Position',
-        required: true
+        required: [true, '关联职位不能为空']
     },
     round: {
-        type: Number,
-        required: true,
-        default: 1
+        type: String,
+        required: [true, '面试轮次不能为空'],
+        trim: true
     },
     type: {
         type: String,
-        enum: ['电话面试', '视频面试', '现场面试', '群面', '单面', '其他'],
-        required: true
+        required: [true, '面试类型不能为空'],
+        trim: true
     },
     date: {
-        type: Date
+        type: Date,
+        required: [true, '面试日期不能为空']
     },
-    location: {
-        type: String
+    duration: {
+        type: Number,
+        default: 60 // 默认时长60分钟
     },
     interviewers: {
         type: String
     },
-    questions: [{
-        type: String
-    }],
-    notes: {
+    questions: {
         type: String
     },
-    feedback: {
+    notes: {
         type: String
     },
     result: {
         type: String,
-        enum: ['通过', '未通过', '等待结果', '未参加'],
+        enum: ['等待结果', '通过', '拒绝'],
         default: '等待结果'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Interview', InterviewSchema);

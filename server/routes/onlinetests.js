@@ -1,63 +1,83 @@
 const express = require('express');
 const router = express.Router();
 const OnlineTest = require('../models/OnlineTest');
+const Position = require('../models/Position');
 
 // @route   GET api/onlinetests/position/:positionId
-// @desc    获取特定职位的所有网测
+// @desc    获取指定职位下的所有网测
 // @access  Public
 router.get('/position/:positionId', async(req, res) => {
     try {
-        const onlineTests = await OnlineTest.find({ position: req.params.positionId }).sort({ createdAt: -1 });
-        res.json(onlineTests);
+        // 验证职位是否存在
+        const position = await Position.findById(req.params.positionId);
+        if (!position) {
+            return res.status(404).json({ message: '未找到该职位' });
+        }
+
+        const onlinetests = await OnlineTest.find({ position: req.params.positionId })
+            .sort({ date: -1 });
+        res.json(onlinetests);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '无效的职位ID' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   GET api/onlinetests/:id
-// @desc    获取单个网测
+// @desc    获取指定ID的网测
 // @access  Public
 router.get('/:id', async(req, res) => {
     try {
-        const onlineTest = await OnlineTest.findById(req.params.id);
+        const onlinetest = await OnlineTest.findById(req.params.id);
 
-        if (!onlineTest) {
-            return res.status(404).json({ msg: '网测不存在' });
+        if (!onlinetest) {
+            return res.status(404).json({ message: '未找到该网测' });
         }
 
-        res.json(onlineTest);
+        res.json(onlinetest);
     } catch (err) {
-        console.error(err.message);
+        console.error(err);
         if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: '网测不存在' });
+            return res.status(404).json({ message: '未找到该网测' });
         }
-        res.status(500).send('服务器错误');
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   POST api/onlinetests
-// @desc    创建新网测
+// @desc    创建网测
 // @access  Public
 router.post('/', async(req, res) => {
-    const { position, type, description, content, notes, completed, testDate } = req.body;
-
     try {
+        // 验证职位是否存在
+        const position = await Position.findById(req.body.position);
+        if (!position) {
+            return res.status(400).json({ message: '无效的职位ID' });
+        }
+
         const newOnlineTest = new OnlineTest({
-            position,
-            type,
-            description,
-            content,
-            notes,
-            completed,
-            testDate
+            position: req.body.position,
+            testType: req.body.testType,
+            platform: req.body.platform,
+            date: req.body.date,
+            duration: req.body.duration || 60,
+            content: req.body.content,
+            score: req.body.score,
+            notes: req.body.notes
         });
 
-        const onlineTest = await newOnlineTest.save();
-        res.json(onlineTest);
+        const onlinetest = await newOnlineTest.save();
+        res.json(onlinetest);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
@@ -65,31 +85,34 @@ router.post('/', async(req, res) => {
 // @desc    更新网测
 // @access  Public
 router.put('/:id', async(req, res) => {
-    const { type, description, content, notes, completed, testDate } = req.body;
-
-    // 构建网测对象
-    const onlineTestFields = {};
-    if (type) onlineTestFields.type = type;
-    if (description) onlineTestFields.description = description;
-    if (content !== undefined) onlineTestFields.content = content;
-    if (notes !== undefined) onlineTestFields.notes = notes;
-    if (completed !== undefined) onlineTestFields.completed = completed;
-    if (testDate) onlineTestFields.testDate = testDate;
-    onlineTestFields.updatedAt = Date.now();
-
     try {
-        let onlineTest = await OnlineTest.findById(req.params.id);
+        // 如果更新包含职位，验证职位是否存在
+        if (req.body.position) {
+            const position = await Position.findById(req.body.position);
+            if (!position) {
+                return res.status(400).json({ message: '无效的职位ID' });
+            }
+        }
 
-        if (!onlineTest) return res.status(404).json({ msg: '网测不存在' });
-
-        onlineTest = await OnlineTest.findByIdAndUpdate(
-            req.params.id, { $set: onlineTestFields }, { new: true }
+        const onlinetest = await OnlineTest.findByIdAndUpdate(
+            req.params.id, { $set: req.body }, { new: true, runValidators: true }
         );
 
-        res.json(onlineTest);
+        if (!onlinetest) {
+            return res.status(404).json({ message: '未找到该网测' });
+        }
+
+        res.json(onlinetest);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该网测' });
+        }
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
@@ -98,16 +121,19 @@ router.put('/:id', async(req, res) => {
 // @access  Public
 router.delete('/:id', async(req, res) => {
     try {
-        const onlineTest = await OnlineTest.findById(req.params.id);
+        const onlinetest = await OnlineTest.findById(req.params.id);
+        if (!onlinetest) {
+            return res.status(404).json({ message: '未找到该网测' });
+        }
 
-        if (!onlineTest) return res.status(404).json({ msg: '网测不存在' });
-
-        await OnlineTest.findByIdAndRemove(req.params.id);
-
-        res.json({ msg: '网测已删除' });
+        await onlinetest.remove();
+        res.json({ message: '网测已删除' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该网测' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 

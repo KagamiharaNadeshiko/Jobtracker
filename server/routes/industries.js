@@ -7,64 +7,97 @@ const Industry = require('../models/Industry');
 // @access  Public
 router.get('/', async(req, res) => {
     try {
-        const industries = await Industry.find().sort({ name: 1 });
+        const industries = await Industry.find().sort('name');
         res.json(industries);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// @route   GET api/industries/:id
+// @desc    获取指定ID的行业
+// @access  Public
+router.get('/:id', async(req, res) => {
+    try {
+        const industry = await Industry.findById(req.params.id);
+        if (!industry) {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
+        res.json(industry);
+    } catch (err) {
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   POST api/industries
-// @desc    创建新行业
+// @desc    创建行业
 // @access  Public
 router.post('/', async(req, res) => {
-    const { name, description } = req.body;
-
     try {
-        let industry = await Industry.findOne({ name });
-
-        if (industry) {
-            return res.status(400).json({ msg: '该行业已存在' });
+        // 检查是否已存在同名行业
+        const existingIndustry = await Industry.findOne({ name: req.body.name });
+        if (existingIndustry) {
+            return res.status(400).json({ message: '该行业名称已存在' });
         }
 
-        industry = new Industry({
-            name,
-            description
+        const newIndustry = new Industry({
+            name: req.body.name,
+            description: req.body.description
         });
 
-        await industry.save();
+        const industry = await newIndustry.save();
         res.json(industry);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   PUT api/industries/:id
-// @desc    更新行业
+// @desc    更新行业信息
 // @access  Public
 router.put('/:id', async(req, res) => {
-    const { name, description } = req.body;
-
-    // 构建行业对象
-    const industryFields = {};
-    if (name) industryFields.name = name;
-    if (description) industryFields.description = description;
-
     try {
-        let industry = await Industry.findById(req.params.id);
+        // 检查是否有其他行业已使用该名称
+        if (req.body.name) {
+            const existingIndustry = await Industry.findOne({
+                name: req.body.name,
+                _id: { $ne: req.params.id }
+            });
 
-        if (!industry) return res.status(404).json({ msg: '行业不存在' });
+            if (existingIndustry) {
+                return res.status(400).json({ message: '该行业名称已存在' });
+            }
+        }
 
-        industry = await Industry.findByIdAndUpdate(
-            req.params.id, { $set: industryFields }, { new: true }
+        const industry = await Industry.findByIdAndUpdate(
+            req.params.id, { $set: req.body }, { new: true, runValidators: true }
         );
+
+        if (!industry) {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
 
         res.json(industry);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
@@ -74,15 +107,18 @@ router.put('/:id', async(req, res) => {
 router.delete('/:id', async(req, res) => {
     try {
         const industry = await Industry.findById(req.params.id);
+        if (!industry) {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
 
-        if (!industry) return res.status(404).json({ msg: '行业不存在' });
-
-        await Industry.findByIdAndRemove(req.params.id);
-
-        res.json({ msg: '行业已删除' });
+        await industry.remove();
+        res.json({ message: '行业已删除' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该行业' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 

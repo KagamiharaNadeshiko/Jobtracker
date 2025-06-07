@@ -4,23 +4,26 @@ const EssaySchema = new mongoose.Schema({
     position: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Position',
-        required: true
+        required: [true, '关联职位不能为空']
     },
-    question: {
+    title: {
         type: String,
-        required: true
+        required: [true, '标题不能为空'],
+        trim: true
     },
-    answer: {
+    content: {
+        type: String,
+        required: [true, '内容不能为空']
+    },
+    wordCount: {
+        type: Number,
+        default: 0
+    },
+    notes: {
         type: String
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Essay', EssaySchema);

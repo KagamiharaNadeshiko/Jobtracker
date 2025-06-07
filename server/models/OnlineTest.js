@@ -4,38 +4,37 @@ const OnlineTestSchema = new mongoose.Schema({
     position: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Position',
-        required: true
+        required: [true, '关联职位不能为空']
     },
-    type: {
+    testType: {
         type: String,
-        enum: ['行测', '性格测试', '英语测试', '专业知识', '编程测试', '案例分析', '其他'],
-        required: true
-    },
-    description: {
-        type: String,
+        required: [true, '测试类型不能为空'],
         trim: true
+    },
+    platform: {
+        type: String,
+        required: [true, '测试平台不能为空'],
+        trim: true
+    },
+    date: {
+        type: Date,
+        required: [true, '测试日期不能为空']
+    },
+    duration: {
+        type: Number,
+        default: 60 // 默认时长60分钟
     },
     content: {
         type: String
     },
-    notes: {
+    score: {
         type: String
     },
-    completed: {
-        type: Boolean,
-        default: false
-    },
-    testDate: {
-        type: Date
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+    notes: {
+        type: String
     }
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('OnlineTest', OnlineTestSchema);

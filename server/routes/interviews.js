@@ -1,77 +1,84 @@
 const express = require('express');
 const router = express.Router();
 const Interview = require('../models/Interview');
+const Position = require('../models/Position');
 
 // @route   GET api/interviews/position/:positionId
-// @desc    获取特定职位的所有面试
+// @desc    获取指定职位下的所有面试
 // @access  Public
 router.get('/position/:positionId', async(req, res) => {
     try {
-        const interviews = await Interview.find({ position: req.params.positionId }).sort({ round: 1 });
+        // 验证职位是否存在
+        const position = await Position.findById(req.params.positionId);
+        if (!position) {
+            return res.status(404).json({ message: '未找到该职位' });
+        }
+
+        const interviews = await Interview.find({ position: req.params.positionId })
+            .sort({ date: -1 });
         res.json(interviews);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '无效的职位ID' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   GET api/interviews/:id
-// @desc    获取单个面试
+// @desc    获取指定ID的面试
 // @access  Public
 router.get('/:id', async(req, res) => {
     try {
         const interview = await Interview.findById(req.params.id);
 
         if (!interview) {
-            return res.status(404).json({ msg: '面试不存在' });
+            return res.status(404).json({ message: '未找到该面试' });
         }
 
         res.json(interview);
     } catch (err) {
-        console.error(err.message);
+        console.error(err);
         if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: '面试不存在' });
+            return res.status(404).json({ message: '未找到该面试' });
         }
-        res.status(500).send('服务器错误');
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
 // @route   POST api/interviews
-// @desc    创建新面试
+// @desc    创建面试
 // @access  Public
 router.post('/', async(req, res) => {
-    const {
-        position,
-        round,
-        type,
-        date,
-        location,
-        interviewers,
-        questions,
-        notes,
-        feedback,
-        result
-    } = req.body;
-
     try {
+        // 验证职位是否存在
+        const position = await Position.findById(req.body.position);
+        if (!position) {
+            return res.status(400).json({ message: '无效的职位ID' });
+        }
+
         const newInterview = new Interview({
-            position,
-            round,
-            type,
-            date,
-            location,
-            interviewers,
-            questions,
-            notes,
-            feedback,
-            result
+            position: req.body.position,
+            round: req.body.round,
+            type: req.body.type,
+            date: req.body.date,
+            duration: req.body.duration || 60,
+            interviewers: req.body.interviewers,
+            questions: req.body.questions,
+            notes: req.body.notes,
+            result: req.body.result || '等待结果'
         });
 
         const interview = await newInterview.save();
         res.json(interview);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
@@ -79,44 +86,34 @@ router.post('/', async(req, res) => {
 // @desc    更新面试
 // @access  Public
 router.put('/:id', async(req, res) => {
-    const {
-        round,
-        type,
-        date,
-        location,
-        interviewers,
-        questions,
-        notes,
-        feedback,
-        result
-    } = req.body;
-
-    // 构建面试对象
-    const interviewFields = {};
-    if (round) interviewFields.round = round;
-    if (type) interviewFields.type = type;
-    if (date) interviewFields.date = date;
-    if (location !== undefined) interviewFields.location = location;
-    if (interviewers !== undefined) interviewFields.interviewers = interviewers;
-    if (questions) interviewFields.questions = questions;
-    if (notes !== undefined) interviewFields.notes = notes;
-    if (feedback !== undefined) interviewFields.feedback = feedback;
-    if (result) interviewFields.result = result;
-    interviewFields.updatedAt = Date.now();
-
     try {
-        let interview = await Interview.findById(req.params.id);
+        // 如果更新包含职位，验证职位是否存在
+        if (req.body.position) {
+            const position = await Position.findById(req.body.position);
+            if (!position) {
+                return res.status(400).json({ message: '无效的职位ID' });
+            }
+        }
 
-        if (!interview) return res.status(404).json({ msg: '面试不存在' });
-
-        interview = await Interview.findByIdAndUpdate(
-            req.params.id, { $set: interviewFields }, { new: true }
+        const interview = await Interview.findByIdAndUpdate(
+            req.params.id, { $set: req.body }, { new: true, runValidators: true }
         );
+
+        if (!interview) {
+            return res.status(404).json({ message: '未找到该面试' });
+        }
 
         res.json(interview);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该面试' });
+        }
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
@@ -126,15 +123,18 @@ router.put('/:id', async(req, res) => {
 router.delete('/:id', async(req, res) => {
     try {
         const interview = await Interview.findById(req.params.id);
+        if (!interview) {
+            return res.status(404).json({ message: '未找到该面试' });
+        }
 
-        if (!interview) return res.status(404).json({ msg: '面试不存在' });
-
-        await Interview.findByIdAndRemove(req.params.id);
-
-        res.json({ msg: '面试已删除' });
+        await interview.remove();
+        res.json({ message: '面试已删除' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('服务器错误');
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ message: '未找到该面试' });
+        }
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
