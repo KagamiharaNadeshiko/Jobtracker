@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
         mongodb-version: [5.0]
 
     steps:
@@ -35,9 +35,12 @@ jobs:
       run: |
         npx create-react-app client --template typescript
         cd client
-        npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
-        npm install react-router-dom @reduxjs/toolkit react-query axios
-        npm install recharts date-fns
+        # 先降级React到18版本以兼容其他库
+        npm install react@18.2.0 react-dom@18.2.0
+        # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
+        npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
+        npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
+        npm install --legacy-peer-deps recharts date-fns
 
     - name: Create frontend source files
       run: |
@@ -73,15 +76,19 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 16.x
+        node-version: 18.x
 
     - name: Install dependencies and build frontend
       run: |
         npm install
         npx create-react-app client --template typescript
         cd client
-        npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
-        npm install react-router-dom @reduxjs/toolkit react-query axios recharts date-fns
+        # 先降级React到18版本以兼容其他库
+        npm install react@18.2.0 react-dom@18.2.0
+        # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
+        npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
+        npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
+        npm install --legacy-peer-deps recharts date-fns
         npm run build
     
     - name: Deploy to Production
@@ -98,13 +105,23 @@ jobs:
             cd client
             rm -rf node_modules
             npm install
+            # 先降级React到18版本以兼容其他库
+            npm install react@18.2.0 react-dom@18.2.0
+            # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
+            npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
+            npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
+            npm install --legacy-peer-deps recharts date-fns
             npm run build
             cd ..
           else
             npx create-react-app client --template typescript
             cd client
-            npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
-            npm install react-router-dom @reduxjs/toolkit react-query axios recharts date-fns
+            # 先降级React到18版本以兼容其他库
+            npm install react@18.2.0 react-dom@18.2.0
+            # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
+            npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
+            npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
+            npm install --legacy-peer-deps recharts date-fns
             npm run build
             cd ..
           fi
