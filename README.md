@@ -1,140 +1,159 @@
-# 求职跟踪系统
+# 求职跟踪系统 (Job Tracking System)
 
-一个用于追踪求职申请过程的完整web应用，包含行业分类、公司管理、职位申请跟踪、申请文书记录、网测内容和面试记录等功能。
-
-## 技术栈
-
-- **前端**: React 18 + TypeScript + Chakra UI
-  - Redux Toolkit (状态管理)
-  - React Router 6 (路由)
-  - React Query (API数据获取)
-  - Recharts (数据可视化)
-- **后端**: Node.js, Express
-- **数据库**: MongoDB (Mongoose)
-- **部署**: GitHub Actions CI/CD
+一个功能完善的求职跟踪系统，用于记录和管理求职过程中的各种信息，包括行业分类、公司信息、职位申请、申请文书、网测记录和面试情况。
 
 ## 功能特点
 
-- 按行业分类管理公司信息
-- 跟踪职位申请状态和重要日期
-- 记录申请文书(ES)的问题和答案
-- 管理网测内容和截止日期
-- 记录面试过程和结果
-- 现代化美观的用户界面
+### 数据管理
+- 行业分类管理
+- 公司信息管理（按行业分类）
+- 职位申请跟踪
+- 申请文书管理
+- 网测记录
+- 面试记录
 
-## 使用流程
+### 用户界面
+- 仪表盘：展示申请统计和最近更新的职位
+- 行业管理：创建和管理不同的行业分类
+- 公司列表：按行业归类的公司信息
+- 职位申请：跟踪所有职位申请的状态
+- 职位详情：管理每个职位的文书、网测和面试
 
-### 1. 管理行业分类
+## 技术栈
 
-1. 在首页点击"行业分类"或侧边栏中的"行业分类"链接
-2. 可以查看已有行业列表，添加新行业，或编辑、删除现有行业
-3. 点击"添加行业"按钮，填写行业名称和描述，如"IT行业"、"咨询业"等
+### 前端
+- React
+- TypeScript
+- React Router DOM
+- Chakra UI
+- React Icons
+- Axios
 
-### 2. 管理公司信息
+### 后端
+- Node.js
+- Express
+- MongoDB
+- Mongoose
 
-1. 在首页点击"公司列表"或侧边栏的"公司列表"链接
-2. 可以查看所有公司或按行业筛选公司
-3. 点击"添加公司"按钮，选择所属行业，填写公司名称、描述和官网链接
+## 安装步骤
 
-### 3. 管理职位申请
+### 前提条件
+- Node.js (版本 14.0.0 或更高)
+- MongoDB
 
-1. 在首页点击"职位申请"或侧边栏的"职位申请"链接
-2. 可以查看所有职位申请或按公司筛选
-3. 点击"添加职位"按钮，选择公司，填写职位名称、描述、申请状态和重要日期
-4. 职位状态包括：准备中、已投递、网测中、面试中、Offer、拒绝
+### 安装过程
 
-### 4. 管理申请文书(ES)
+1. 克隆仓库
+```bash
+git clone <repository-url>
+cd jobtracking
+```
 
-1. 在职位详情页面，点击"申请文书"标签
-2. 可以查看该职位的所有申请文书问题和答案
-3. 点击"添加文书"按钮，输入文书问题和准备的答案内容
+2. 安装服务器依赖
+```bash
+npm install
+```
 
-### 5. 管理网测
+3. 安装客户端依赖
+```bash
+npm run install-client
+```
 
-1. 在职位详情页面，点击"网测"标签
-2. 可以查看该职位的所有网测记录
-3. 点击"添加网测"按钮，选择网测类型（行测、性格测试、英语测试等）
-4. 填写网测内容、注意事项和截止日期
-5. 完成网测后，可以更新状态为"已完成"并添加备注
+4. 配置环境变量
+创建 `.env` 文件并添加以下内容:
+```
+NODE_ENV=development
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/jobtracking
+```
 
-### 6. 管理面试
+5. 运行开发环境
+```bash
+npm run dev
+```
+这将同时启动后端服务器(端口5000)和前端开发服务器(端口3000)
 
-1. 在职位详情页面，点击"面试"标签
-2. 可以查看该职位的所有面试轮次
-3. 点击"添加面试"按钮，选择面试轮次和类型
-4. 记录面试时间、地点、面试官信息
-5. 面试后，可以添加面试问题、反馈和结果
+## 部署
 
-### 7. 追踪申请进度
+### 部署到Heroku
+```bash
+heroku create
+git push heroku main
+```
 
-1. 在首页可以概览所有申请的进度状态
-2. 使用筛选功能查看特定状态的申请（如"网测中"或"面试中"）
-3. 系统会根据截止日期提醒需要关注的申请
+### 自定义部署
+1. 构建前端
+```bash
+npm run build
+```
 
-## GitHub部署方式
-
-本项目通过GitHub Actions实现自动构建和部署，无需本地环境。
-
-### 1. Fork和配置仓库
-
-1. Fork本仓库到您的GitHub账号下
-2. 进入仓库设置，添加以下Secrets:
-   - `HOST`: 部署服务器的IP或域名
-   - `USERNAME`: SSH登录用户名
-   - `SSH_PRIVATE_KEY`: SSH私钥
-
-### 2. 部署流程
-
-每次推送到main或master分支时，GitHub Actions会自动:
-1. 安装Node.js环境
-2. 安装后端依赖
-3. 创建和构建React前端应用
-4. 运行测试
-5. 将代码部署到指定服务器
-
-### 3. 检查部署状态
-
-每次部署后:
-1. 在GitHub仓库的Actions标签页可查看部署进度和状态
-2. 如有错误，可查看详细日志排查问题
-
-### 4. 服务器要求
-
-目标服务器需要满足:
-1. 安装了Node.js 16+
-2. 安装了MongoDB数据库
-3. 安装了PM2进程管理器
-4. 具有足够权限执行部署脚本
+2. 启动生产服务器
+```bash
+npm start
+```
 
 ## 项目结构
-
 ```
-jobtracing/
-│
-├── client/              # React前端代码
-│   ├── public/          # 静态资源
-│   ├── src/             # React源代码
-│   │   ├── components/  # 可复用组件
-│   │   ├── features/    # 按功能模块划分的组件
-│   │   ├── pages/       # 页面组件
-│   │   ├── hooks/       # 自定义hooks
-│   │   ├── services/    # API服务
-│   │   └── store/       # 状态管理
-│   └── package.json     # 前端依赖
-│
-├── server/              # 后端服务器代码
-│   ├── config/          # 配置文件
-│   ├── models/          # 数据模型
-│   └── routes/          # API路由
-│
-├── __tests__/           # 测试文件
-│
-├── .github/             # GitHub相关配置
-│   └── workflows/       # GitHub Actions工作流
-│
-├── .env                 # 环境变量（本地开发用）
-├── .eslintrc.json       # ESLint配置
-├── .gitignore           # Git忽略文件
-├── package.json         # 项目依赖和脚本
-└── server.js            # 主应用入口点
-``` 
+jobtracking/
+├── client/                 # React前端
+│   ├── public/             # 静态文件
+│   └── src/                # 源代码
+│       ├── components/     # 组件
+│       ├── pages/          # 页面组件
+│       └── services/       # API服务
+├── server/                 # Express后端
+│   ├── config/             # 配置文件
+│   ├── controllers/        # 控制器
+│   ├── models/             # 数据模型
+│   └── routes/             # API路由
+└── server.js               # 入口文件
+```
+
+## 数据模型
+
+### Industry (行业)
+- name: 行业名称
+- description: 行业描述
+
+### Company (公司)
+- name: 公司名称
+- industry: 所属行业
+- description: 公司描述
+- location: 公司地点
+- website: 公司网站(可选)
+
+### Position (职位)
+- title: 职位名称
+- company: 所属公司
+- description: 职位描述
+- location: 工作地点
+- deadline: 申请截止日期(可选)
+- status: 申请状态
+
+### Essay (申请文书)
+- position: 关联职位
+- title: 文书标题
+- content: 文书内容
+- wordCount: 字数统计
+- notes: 备注(可选)
+
+### OnlineTest (网测)
+- position: 关联职位
+- testType: 测试类型
+- platform: 测试平台
+- date: 测试日期
+- duration: 测试时长(分钟)
+- content: 测试内容(可选)
+- score: 测试成绩(可选)
+- notes: 备注(可选)
+
+### Interview (面试)
+- position: 关联职位
+- round: 面试轮次
+- type: 面试类型
+- date: 面试日期
+- duration: 面试时长(分钟)
+- interviewers: 面试官(可选)
+- questions: 面试问题(可选)
+- notes: 备注(可选)
+- result: 面试结果 

@@ -1,36 +1,38 @@
 {
-    "name": "jobtracing",
+    "name": "jobtracking",
     "version": "1.0.0",
-    "description": "求职跟踪系统",
+    "description": "求职跟踪系统 - 记录求职过程中的公司、职位、文书、网测和面试情况",
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
         "server": "nodemon server.js",
-        "client": "npm start --prefix client",
+        "client": "cd client && npm start",
         "dev": "concurrently \"npm run server\" \"npm run client\"",
-        "install-client": "npm install --prefix client",
-        "build-client": "npm run build --prefix client",
-        "lint": "eslint .",
-        "test": "jest --forceExit --detectOpenHandles",
-        "build": "echo 'Server build step not required'",
-        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
+        "build": "cd client && npm run build",
+        "install-client": "cd client && npm install",
+        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm run install-client && npm run build"
     },
+    "keywords": [
+        "求职",
+        "跟踪",
+        "面试",
+        "网测",
+        "job",
+        "tracking"
+    ],
     "author": "",
     "license": "MIT",
     "dependencies": {
         "cors": "^2.8.5",
-        "dotenv": "^10.0.0",
-        "express": "^4.17.3",
-        "mongoose": "^6.2.10"
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "mongoose": "^6.7.2"
     },
     "devDependencies": {
-        "concurrently": "^7.1.0",
-        "eslint": "^8.12.0",
-        "jest": "^27.5.1",
-        "nodemon": "^2.0.15",
-        "supertest": "^6.2.2"
+        "concurrently": "^7.5.0",
+        "nodemon": "^2.0.20"
     },
     "engines": {
-        "node": "16.x"
+        "node": ">=14.0.0"
     }
 }

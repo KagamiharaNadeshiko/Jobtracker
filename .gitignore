@@ -1,38 +1,37 @@
-# 依赖
-/node_modules
-/client/node_modules
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
 
-# 日志
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# 环境变量
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# 编辑器配置
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
-
-# 操作系统文件
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# 构建输出
-/dist
-/build
+# Build files
 /client/build
 /client/dist
+
+# Logs
+logs
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 编辑器配置
+*.sublime-project
+*.sublime-workspace
 
 # 测试覆盖率
 /coverage
