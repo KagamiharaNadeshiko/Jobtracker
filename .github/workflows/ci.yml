@@ -29,7 +29,7 @@ jobs:
         mongodb-version: ${{ matrix.mongodb-version }}
 
     - name: Install server dependencies
-      run: npm ci
+      run: npm install
 
     - name: Create React frontend
       run: |
@@ -77,7 +77,7 @@ jobs:
 
     - name: Install dependencies and build frontend
       run: |
-        npm ci
+        npm install
         npx create-react-app client --template typescript
         cd client
         npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
@@ -93,11 +93,11 @@ jobs:
         script: |
           cd ~/jobtracing
           git pull
-          npm ci
+          npm install
           if [ -d "client" ]; then
             cd client
             rm -rf node_modules
-            npm ci
+            npm install
             npm run build
             cd ..
           else
