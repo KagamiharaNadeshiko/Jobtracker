@@ -28,7 +28,18 @@ const PositionSchema = new mongoose.Schema({
         type: String,
         enum: ['准备中', '已投递', '网测中', '面试中', 'Offer', '拒绝'],
         default: '准备中'
-    }
+    },
+    resume: {
+        type: String // 简历文件路径
+    },
+    attachments: [{
+        name: String,
+        path: String,
+        uploadDate: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true
 });

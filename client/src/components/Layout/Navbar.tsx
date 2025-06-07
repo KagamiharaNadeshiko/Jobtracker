@@ -1,12 +1,29 @@
 import React from 'react';
-import { Box, Flex, Text, Link as ChakraLink, Button, Icon, Spacer, useColorModeValue } from '@chakra-ui/react';
+import { 
+  Box, 
+  Flex, 
+  Text, 
+  Link as ChakraLink, 
+  Button, 
+  Icon, 
+  Spacer,
+  Avatar,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  useColorModeValue
+} from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { FaHome, FaIndustry, FaBuilding, FaFileAlt } from 'react-icons/fa';
+import { FaHome, FaIndustry, FaBuilding, FaFileAlt, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
   const bg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { isAuthenticated, user, logout } = useAuth();
 
   // 检查当前路径是否匹配
   const isActive = (path: string) => {
@@ -30,36 +47,91 @@ const Navbar: React.FC = () => {
           </Text>
         </Flex>
 
-        <Flex alignItems="center">
-          {navItems.map((item) => (
-            <ChakraLink
-              as={RouterLink}
-              to={item.path}
-              key={item.path}
-              mx={3}
-              display="flex"
-              alignItems="center"
-              fontWeight={isActive(item.path) ? "bold" : "normal"}
-              color={isActive(item.path) ? "brand.500" : "gray.600"}
-              _hover={{ textDecoration: 'none', color: 'brand.500' }}
-            >
-              <Icon as={item.icon} mr={1} />
-              <Text>{item.name}</Text>
-            </ChakraLink>
-          ))}
-        </Flex>
+        {isAuthenticated && (
+          <Flex alignItems="center">
+            {navItems.map((item) => (
+              <ChakraLink
+                as={RouterLink}
+                to={item.path}
+                key={item.path}
+                mx={3}
+                display="flex"
+                alignItems="center"
+                fontWeight={isActive(item.path) ? "bold" : "normal"}
+                color={isActive(item.path) ? "brand.500" : "gray.600"}
+                _hover={{ textDecoration: 'none', color: 'brand.500' }}
+              >
+                <Icon as={item.icon} mr={1} />
+                <Text>{item.name}</Text>
+              </ChakraLink>
+            ))}
+          </Flex>
+        )}
 
         <Spacer />
 
-        <Button
-          as={RouterLink}
-          to="/positions/new"
-          colorScheme="blue"
-          size="sm"
-          leftIcon={<Icon as={FaFileAlt} />}
-        >
-          添加职位
-        </Button>
+        {isAuthenticated ? (
+          <Flex alignItems="center">
+            <Button
+              as={RouterLink}
+              to="/positions/new"
+              colorScheme="blue"
+              size="sm"
+              leftIcon={<Icon as={FaFileAlt} />}
+              mr={4}
+            >
+              添加职位
+            </Button>
+
+            <Menu>
+              <MenuButton>
+                <Avatar 
+                  size="sm" 
+                  name={user?.username} 
+                  src={user?.avatar} 
+                  bg="brand.500"
+                />
+              </MenuButton>
+              <MenuList>
+                <Text px={3} py={2} fontWeight="bold">
+                  {user?.username}
+                </Text>
+                <Text px={3} py={1} fontSize="sm" color="gray.500">
+                  {user?.email}
+                </Text>
+                <MenuDivider />
+                <MenuItem icon={<Icon as={FaUser} />}>个人资料</MenuItem>
+                <MenuItem 
+                  icon={<Icon as={FaSignOutAlt} />} 
+                  onClick={() => logout()}
+                >
+                  退出登录
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          </Flex>
+        ) : (
+          <Flex>
+            <Button 
+              as={RouterLink} 
+              to="/login" 
+              variant="ghost" 
+              colorScheme="blue" 
+              size="sm" 
+              mr={2}
+            >
+              登录
+            </Button>
+            <Button 
+              as={RouterLink} 
+              to="/register" 
+              colorScheme="blue" 
+              size="sm"
+            >
+              注册
+            </Button>
+          </Flex>
+        )}
       </Flex>
     </Box>
   );

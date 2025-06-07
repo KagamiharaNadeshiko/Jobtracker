@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./server/config/db');
 
 // 加载环境变量
@@ -14,7 +15,14 @@ const app = express();
 
 // 中间件
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:3000',
+    credentials: true
+}));
+
+// 静态文件夹
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 定义路由
 app.use('/api/industries', require('./server/routes/industries'));
@@ -23,6 +31,8 @@ app.use('/api/positions', require('./server/routes/positions'));
 app.use('/api/essays', require('./server/routes/essays'));
 app.use('/api/onlinetests', require('./server/routes/onlinetests'));
 app.use('/api/interviews', require('./server/routes/interviews'));
+app.use('/api/auth', require('./server/routes/auth'));
+app.use('/api/upload', require('./server/routes/upload'));
 
 // 在生产环境中提供静态文件
 if (process.env.NODE_ENV === 'production') {
