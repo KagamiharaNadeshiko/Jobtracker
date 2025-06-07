@@ -1,0 +1,74 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 前端框架选择指南
+
+本项目前端部分基于React和TypeScript构建，采用组件化架构设计。以下是关于前端框架选择的重要信息和未来发展方向。
+
+## 现状与迁移考虑
+
+本项目最初使用 [Create React App (CRA)](https://create-react-app.dev/) 构建，但需注意:
+
+- **Create React App 已被官方标记为弃用**
+- React官方不再积极维护该工具
+- 官方建议新项目使用其他现代框架
+
+如果你遇到以下错误，这是正常的，表明CRA已被弃用:
+```
+create-react-app is deprecated.
+You can find a list of up-to-date React frameworks on react.dev
+```
+
+## 推荐的替代方案
+
+对于新项目或考虑迁移的情况，以下是React团队推荐的现代化框架:
+
+### 1. Next.js
+- **官网**: [https://nextjs.org/](https://nextjs.org/)
+- **优势**: 服务端渲染(SSR)、静态站点生成(SSG)、文件系统路由、API路由
+- **适用场景**: 需要SEO优化的应用、大型项目、全栈应用
+
+### 2. Vite
+- **官网**: [https://vitejs.dev/](https://vitejs.dev/)
+- **优势**: 极快的开发服务器、快速的热模块更新(HMR)、优化的构建过程
+- **适用场景**: 现代前端应用、快速开发原型
+
+### 3. Remix
+- **官网**: [https://remix.run/](https://remix.run/)
+- **优势**: 嵌套路由、并行数据加载、无需状态管理
+- **适用场景**: 交互丰富的应用、注重用户体验的应用
+
+### 4. Gatsby
+- **官网**: [https://www.gatsbyjs.com/](https://www.gatsbyjs.com/)
+- **优势**: 静态站点生成、强大的插件生态、GraphQL集成
+- **适用场景**: 内容密集型网站、博客、营销网站
+
+## 迁移策略
+
+如需从CRA迁移到现代框架，建议采取渐进式方法:
+
+1. **评估需求**: 确定项目是否需要SSR、SSG或其他现代框架功能
+2. **选择适合的框架**: 根据项目需求选择最合适的框架
+3. **增量迁移**: 
+   - 先创建新的框架项目
+   - 从CRA项目中复制组件和功能
+   - 确保API交互逻辑保持一致
+   - 逐步测试和部署
+
+## 当前项目工具链
+
+尽管CRA已弃用，当前项目仍使用以下React工具链:
+
+- **TypeScript**: 类型安全的JavaScript超集
+- **React Router DOM**: 客户端路由
+- **Chakra UI**: 组件库
+- **Axios**: HTTP客户端
+- **Recharts**: 数据可视化组件
+
+## 相关资源
+
+- [React官方框架推荐](https://react.dev/learn/start-a-new-react-project)
+- [从Create React App迁移到Vite](https://vitejs.dev/guide/migration-from-cra.html)
+- [Next.js迁移指南](https://nextjs.org/docs/migrating/from-create-react-app)

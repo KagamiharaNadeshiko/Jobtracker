@@ -17,7 +17,7 @@
 - 申请文书管理
 - 网测记录
 - 面试记录
-- 简历和文件上传
+- 简历和文件上传（支持最大50MB的文件）
 
 ### 数据可视化
 - 仪表盘：申请状态分布饼图
@@ -42,6 +42,12 @@
 - React Icons
 - Recharts (数据可视化)
 - Axios
+
+> **注意**: 本项目最初使用 create-react-app 构建，但该工具已被React团队标记为弃用。对于新项目，建议考虑使用以下现代替代方案:
+> - Next.js (https://nextjs.org/)
+> - Vite (https://vitejs.dev/)
+> - Remix (https://remix.run/)
+> - 更多推荐框架请参考: https://react.dev/
 
 ### 后端
 - Node.js
@@ -218,8 +224,8 @@ jobtracking/
 - PUT /api/auth/updatepassword - 更新密码
 
 ### 文件上传
-- POST /api/upload - 上传通用文件
-- POST /api/upload/resume/:positionId - 上传简历到特定职位
+- POST /api/upload - 上传通用文件 (最大50MB)
+- POST /api/upload/resume/:positionId - 上传简历到特定职位 (最大50MB)
 - DELETE /api/upload/:filename - 删除文件
 
 ### 行业

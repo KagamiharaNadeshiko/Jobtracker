@@ -31,26 +31,12 @@ jobs:
     - name: Install server dependencies
       run: npm install
 
-    - name: Create React frontend
+    - name: Install frontend dependencies
       run: |
-        npx create-react-app client --template typescript
         cd client
-        # 先降级React到18版本以兼容其他库
-        npm install react@18.2.0 react-dom@18.2.0
-        # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
-        npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
-        npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
-        npm install --legacy-peer-deps recharts date-fns
-
-    - name: Create frontend source files
-      run: |
-        mkdir -p client/src/components
-        mkdir -p client/src/features
-        mkdir -p client/src/hooks
-        mkdir -p client/src/services
-        mkdir -p client/src/store
-        mkdir -p client/src/pages
-        mkdir -p client/src/utils
+        npm install --legacy-peer-deps
+        # 确保使用正确的React版本
+        npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
 
     - name: Build React frontend
       run: cd client && npm run build
@@ -81,14 +67,10 @@ jobs:
     - name: Install dependencies and build frontend
       run: |
         npm install
-        npx create-react-app client --template typescript
         cd client
-        # 先降级React到18版本以兼容其他库
-        npm install react@18.2.0 react-dom@18.2.0
-        # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
-        npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
-        npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
-        npm install --legacy-peer-deps recharts date-fns
+        npm install --legacy-peer-deps
+        # 确保使用正确的React版本
+        npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
         npm run build
     
     - name: Deploy to Production
@@ -101,28 +83,11 @@ jobs:
           cd ~/jobtracing
           git pull
           npm install
-          if [ -d "client" ]; then
-            cd client
-            rm -rf node_modules
-            npm install
-            # 先降级React到18版本以兼容其他库
-            npm install react@18.2.0 react-dom@18.2.0
-            # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
-            npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
-            npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
-            npm install --legacy-peer-deps recharts date-fns
-            npm run build
-            cd ..
-          else
-            npx create-react-app client --template typescript
-            cd client
-            # 先降级React到18版本以兼容其他库
-            npm install react@18.2.0 react-dom@18.2.0
-            # 安装UI和状态管理库，使用--legacy-peer-deps避免依赖冲突
-            npm install --legacy-peer-deps @chakra-ui/react @emotion/react @emotion/styled framer-motion
-            npm install --legacy-peer-deps react-router-dom @reduxjs/toolkit react-query axios
-            npm install --legacy-peer-deps recharts date-fns
-            npm run build
-            cd ..
-          fi
+          cd client
+          rm -rf node_modules
+          npm install --legacy-peer-deps
+          # 确保使用正确的React版本
+          npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
+          npm run build
+          cd ..
           pm2 restart jobtracing || pm2 start server.js --name jobtracing 

@@ -1,0 +1,129 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 开发环境设置指南
+
+本文档提供项目开发环境的设置指南，涵盖常见问题的解决方案和最佳实践。
+
+## 初始设置
+
+### 项目结构创建
+
+1. **后端设置**:
+   - 在项目根目录创建服务器相关文件
+   - 安装依赖: `npm install`
+
+2. **前端设置**:
+   - 前端代码位于 `/client` 目录
+   - 安装客户端依赖: `cd client && npm install`
+
+### 处理目录冲突
+
+当尝试初始化前端项目时，如果遇到以下错误:
+```
+The directory client contains files that could conflict:
+  package.json
+  src/
+Either try using a new directory name, or remove the files listed above.
+```
+
+**解决方案**:
+1. **使用不同目录名**:
+   ```bash
+   npx create-react-app frontend --template typescript
+   ```
+
+2. **移除现有目录后重新创建**:
+   ```bash
+   rm -rf client
+   npx create-react-app client --template typescript
+   ```
+
+3. **手动设置现有目录** (推荐方案):
+   ```bash
+   cd client
+   npm init -y
+   npm install react react-dom typescript @types/react @types/react-dom
+   # 手动创建tsconfig.json和其他必要文件
+   ```
+
+## 依赖警告处理
+
+在安装依赖时，可能会出现一些警告，如:
+
+```
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated tar@2.2.2: This version of tar is no longer supported
+```
+
+### 处理策略:
+
+1. **非关键警告**: 大多依赖警告来自间接依赖，不会立即影响项目功能
+2. **更新直接依赖**: 确保直接依赖在 package.json 中使用最新版本
+3. **审查替代方案**: 考虑使用寿命更长的替代库
+4. **暂时忽略**: 对于不在项目控制范围内的警告，可以暂时忽略
+
+对于本项目，请确保使用以下依赖版本以减少警告:
+```json
+{
+  "cookie-parser": "^1.4.6",
+  "multer": "^2.0.1"
+}
+```
+
+## 前端框架选择
+
+由于 Create React App 已被弃用，推荐用现代框架替代:
+- **新项目**: 优先使用 Next.js、Vite 或 Remix
+- **现有项目**: 可继续使用，但考虑渐进式迁移计划
+
+详见 [前端框架选择指南](.cursor/rules/frontend-framework.mdc)
+
+## 环境变量设置
+
+1. **创建环境文件**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **必要环境变量**:
+   ```
+   NODE_ENV=development
+   PORT=5000
+   MONGO_URI=mongodb://localhost:27017/jobtracking
+   JWT_SECRET=your_secret_key
+   JWT_EXPIRE=30d
+   JWT_COOKIE_EXPIRE=30
+   ```
+
+## 常见问题解决
+
+### 无法启动前端开发服务器
+
+**症状**: 运行 `npm run client` 时出错
+**解决方案**:
+```bash
+cd client
+npm install
+npm start
+```
+
+### 数据库连接问题
+
+**症状**: 服务器启动但显示数据库连接错误
+**解决方案**:
+1. 确保MongoDB服务运行: `sudo systemctl status mongodb`
+2. 检查连接字符串是否正确
+3. 确保网络和防火墙设置允许数据库连接
+
+### 文件上传问题
+
+**症状**: 上传文件失败或报错
+**解决方案**:
+1. 确保 `public/uploads` 目录存在且具有写入权限
+2. 检查 Multer 配置是否正确
+3. 验证请求是否包含正确的 Content-Type (multipart/form-data)
+4. 确认上传文件大小未超过限制 (当前限制: 50MB)
