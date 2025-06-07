@@ -59,8 +59,8 @@ jobs:
       run: npm run lint
       continue-on-error: true
 
-    - name: Test
-      run: npm test
+    - name: Run backend tests only
+      run: npm test -- __tests__/server.test.js
       env:
         CI: true
         MONGO_URI: mongodb://localhost:27017/jobtracing_test

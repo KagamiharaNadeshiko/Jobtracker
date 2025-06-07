@@ -3,12 +3,20 @@
         "node": true,
         "commonjs": true,
         "es2021": true,
-        "jest": true
+        "jest": true,
+        "browser": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended"
+    ],
     "parserOptions": {
-        "ecmaVersion": "latest"
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
     },
+    "ignorePatterns": ["client/build/**", "node_modules/**"],
     "rules": {
         "indent": [
             "error",

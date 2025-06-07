@@ -1,0 +1,7 @@
+# 忽略客户端构建文件
+client/build/
+client/node_modules/
+node_modules/
+coverage/
+dist/
+build/ 
