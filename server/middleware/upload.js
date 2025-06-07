@@ -36,7 +36,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// 初始化上传
+// 初始化上传，添加适当的大小限制和安全设置
 const upload = multer({
     storage,
     fileFilter,

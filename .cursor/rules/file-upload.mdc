@@ -1,0 +1,61 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 文件上传系统
+
+本项目实现了安全的文件上传功能，支持简历和其他文件的上传、存储和管理。
+
+## 核心文件
+
+- 上传中间件: [server/middleware/upload.js](mdc:server/middleware/upload.js)
+- 上传控制器: [server/controllers/upload.js](mdc:server/controllers/upload.js)
+- 上传路由: [server/routes/upload.js](mdc:server/routes/upload.js)
+- 上传组件: [client/src/components/FileUpload.tsx](mdc:client/src/components/FileUpload.tsx)
+- 职位模型（包含文件字段）: [server/models/Position.js](mdc:server/models/Position.js)
+
+## 功能特点
+
+1. **文件上传中间件**:
+   - 使用multer处理文件上传
+   - 配置文件存储位置和命名策略
+   - 限制文件类型和大小
+   - 生成唯一文件名以防冲突
+
+2. **支持的文件类型**:
+   - 简历文件: PDF, DOC, DOCX
+   - 图像文件: JPEG, JPG, PNG, GIF
+   - 可在配置中自定义支持的文件类型
+
+3. **上传API**:
+   - `/api/upload`: 上传通用文件
+   - `/api/upload/resume/:positionId`: 上传简历并关联到职位
+   - `/api/upload/:filename`: 删除已上传的文件
+
+4. **文件存储**:
+   - 文件存储在 `/public/uploads` 目录
+   - 通过URL路径 `/uploads/filename` 访问
+   - 文件引用存储在数据库中
+
+## 前端组件
+
+FileUpload组件提供以下功能:
+- 文件选择与预览
+- 上传进度条显示
+- 文件类型验证
+- 文件大小验证
+- 上传成功/失败通知
+
+## 安全与性能
+
+1. **安全措施**:
+   - 所有上传API需要身份验证
+   - 文件类型白名单
+   - 文件大小限制（默认10MB）
+   - 生成随机文件名，防止路径遍历攻击
+
+2. **性能考虑**:
+   - 使用流式上传处理大文件
+   - 上传进度实时显示
+   - 异步处理文件上传请求

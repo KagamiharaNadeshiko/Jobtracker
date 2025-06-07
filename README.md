@@ -4,6 +4,12 @@
 
 ## 功能特点
 
+### 用户与认证
+- 用户注册和登录系统
+- JWT认证保护API路由
+- 基于角色的访问控制
+- 个人资料管理
+
 ### 数据管理
 - 行业分类管理
 - 公司信息管理（按行业分类）
@@ -11,8 +17,15 @@
 - 申请文书管理
 - 网测记录
 - 面试记录
+- 简历和文件上传
+
+### 数据可视化
+- 仪表盘：申请状态分布饼图
+- 月度申请活动统计图表
+- 实时进度与数据统计
 
 ### 用户界面
+- 响应式布局适配各种设备
 - 仪表盘：展示申请统计和最近更新的职位
 - 行业管理：创建和管理不同的行业分类
 - 公司列表：按行业归类的公司信息
@@ -22,11 +35,12 @@
 ## 技术栈
 
 ### 前端
-- React
+- React 18
 - TypeScript
-- React Router DOM
+- React Router DOM 6
 - Chakra UI
 - React Icons
+- Recharts (数据可视化)
 - Axios
 
 ### 后端
@@ -34,6 +48,9 @@
 - Express
 - MongoDB
 - Mongoose
+- JWT认证
+- bcryptjs (密码加密)
+- Multer (文件上传)
 
 ## 安装步骤
 
@@ -65,13 +82,28 @@ npm run install-client
 NODE_ENV=development
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/jobtracking
+JWT_SECRET=your_secret_key
+JWT_EXPIRE=30d
+JWT_COOKIE_EXPIRE=30
 ```
 
-5. 运行开发环境
+5. 创建上传目录
+```bash
+mkdir -p public/uploads
+```
+
+6. 运行开发环境
 ```bash
 npm run dev
 ```
 这将同时启动后端服务器(端口5000)和前端开发服务器(端口3000)
+
+## 测试
+
+运行单元测试:
+```bash
+npm test
+```
 
 ## 部署
 
@@ -95,21 +127,37 @@ npm start
 ## 项目结构
 ```
 jobtracking/
+├── __tests__/              # 测试文件
 ├── client/                 # React前端
 │   ├── public/             # 静态文件
 │   └── src/                # 源代码
 │       ├── components/     # 组件
+│       │   ├── charts/     # 图表组件
+│       │   └── Layout/     # 布局组件
+│       ├── context/        # Context API
 │       ├── pages/          # 页面组件
 │       └── services/       # API服务
+├── public/                 # 公共静态文件
+│   ├── uploads/            # 上传文件存储
+│   ├── css/                # CSS文件
+│   ├── js/                 # JavaScript文件
+│   └── images/             # 图片文件
 ├── server/                 # Express后端
 │   ├── config/             # 配置文件
 │   ├── controllers/        # 控制器
+│   ├── middleware/         # 中间件
 │   ├── models/             # 数据模型
 │   └── routes/             # API路由
 └── server.js               # 入口文件
 ```
 
 ## 数据模型
+
+### User (用户)
+- username: 用户名
+- email: 邮箱
+- password: 密码(加密存储)
+- avatar: 头像(可选)
 
 ### Industry (行业)
 - name: 行业名称
@@ -129,6 +177,8 @@ jobtracking/
 - location: 工作地点
 - deadline: 申请截止日期(可选)
 - status: 申请状态
+- resume: 简历文件路径
+- attachments: 附件列表
 
 ### Essay (申请文书)
 - position: 关联职位
@@ -157,3 +207,40 @@ jobtracking/
 - questions: 面试问题(可选)
 - notes: 备注(可选)
 - result: 面试结果 
+
+## API路由
+
+### 认证
+- POST /api/auth/register - 注册用户
+- POST /api/auth/login - 用户登录
+- GET /api/auth/logout - 退出登录
+- GET /api/auth/me - 获取当前用户信息
+- PUT /api/auth/updatepassword - 更新密码
+
+### 文件上传
+- POST /api/upload - 上传通用文件
+- POST /api/upload/resume/:positionId - 上传简历到特定职位
+- DELETE /api/upload/:filename - 删除文件
+
+### 行业
+- GET /api/industries - 获取所有行业
+- POST /api/industries - 创建行业
+- GET /api/industries/:id - 获取单个行业
+- PUT /api/industries/:id - 更新行业
+- DELETE /api/industries/:id - 删除行业
+
+### 公司
+- GET /api/companies - 获取所有公司
+- POST /api/companies - 创建公司
+- GET /api/companies/:id - 获取单个公司
+- PUT /api/companies/:id - 更新公司
+- DELETE /api/companies/:id - 删除公司
+- GET /api/companies/industry/:id - 按行业获取公司
+
+### 职位
+- GET /api/positions - 获取所有职位
+- POST /api/positions - 创建职位
+- GET /api/positions/:id - 获取单个职位
+- PUT /api/positions/:id - 更新职位
+- DELETE /api/positions/:id - 删除职位
+- GET /api/positions/company/:id - 按公司获取职位 
