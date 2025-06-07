@@ -1,0 +1,112 @@
+name: Node.js & React CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        mongodb-version: [5.0]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.8.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+
+    - name: Install server dependencies
+      run: npm ci
+
+    - name: Create React frontend
+      run: |
+        npx create-react-app client --template typescript
+        cd client
+        npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
+        npm install react-router-dom @reduxjs/toolkit react-query axios
+        npm install recharts date-fns
+
+    - name: Create frontend source files
+      run: |
+        mkdir -p client/src/components
+        mkdir -p client/src/features
+        mkdir -p client/src/hooks
+        mkdir -p client/src/services
+        mkdir -p client/src/store
+        mkdir -p client/src/pages
+        mkdir -p client/src/utils
+
+    - name: Build React frontend
+      run: cd client && npm run build
+
+    - name: Run linting
+      run: npm run lint
+      continue-on-error: true
+
+    - name: Test
+      run: npm test
+      env:
+        CI: true
+        MONGO_URI: mongodb://localhost:27017/jobtracing_test
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16.x
+
+    - name: Install dependencies and build frontend
+      run: |
+        npm ci
+        npx create-react-app client --template typescript
+        cd client
+        npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
+        npm install react-router-dom @reduxjs/toolkit react-query axios recharts date-fns
+        npm run build
+    
+    - name: Deploy to Production
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/jobtracing
+          git pull
+          npm ci
+          if [ -d "client" ]; then
+            cd client
+            rm -rf node_modules
+            npm ci
+            npm run build
+            cd ..
+          else
+            npx create-react-app client --template typescript
+            cd client
+            npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion
+            npm install react-router-dom @reduxjs/toolkit react-query axios recharts date-fns
+            npm run build
+            cd ..
+          fi
+          pm2 restart jobtracing || pm2 start server.js --name jobtracing 

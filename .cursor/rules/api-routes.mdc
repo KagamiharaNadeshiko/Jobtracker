@@ -1,0 +1,68 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# API 路由指南
+
+本系统通过RESTful API与前端进行通信。所有API路由以 `/api` 为前缀。
+
+## 路由文件
+
+- 行业API: [server/routes/industries.js](mdc:server/routes/industries.js)
+- 公司API: [server/routes/companies.js](mdc:server/routes/companies.js)
+- 职位API: [server/routes/positions.js](mdc:server/routes/positions.js)
+- 文书API: [server/routes/essays.js](mdc:server/routes/essays.js)
+- 网测API: [server/routes/onlinetests.js](mdc:server/routes/onlinetests.js)
+- 面试API: [server/routes/interviews.js](mdc:server/routes/interviews.js)
+
+## 核心API端点
+
+### 行业 (Industries)
+
+- `GET /api/industries` - 获取所有行业
+- `POST /api/industries` - 创建新行业
+- `PUT /api/industries/:id` - 更新行业
+- `DELETE /api/industries/:id` - 删除行业
+
+### 公司 (Companies)
+
+- `GET /api/companies` - 获取所有公司
+- `GET /api/companies/industry/:industryId` - 获取特定行业的公司
+- `GET /api/companies/:id` - 获取单个公司
+- `POST /api/companies` - 创建新公司
+- `PUT /api/companies/:id` - 更新公司
+- `DELETE /api/companies/:id` - 删除公司
+
+### 职位 (Positions)
+
+- `GET /api/positions` - 获取所有职位
+- `GET /api/positions/company/:companyId` - 获取特定公司的职位
+- `GET /api/positions/:id` - 获取单个职位
+- `POST /api/positions` - 创建新职位
+- `PUT /api/positions/:id` - 更新职位
+- `DELETE /api/positions/:id` - 删除职位
+
+### 申请文书 (Essays)
+
+- `GET /api/essays/position/:positionId` - 获取特定职位的文书
+- `GET /api/essays/:id` - 获取单个文书
+- `POST /api/essays` - 创建新文书
+- `PUT /api/essays/:id` - 更新文书
+- `DELETE /api/essays/:id` - 删除文书
+
+### 网测 (OnlineTests)
+
+- `GET /api/onlinetests/position/:positionId` - 获取特定职位的网测
+- `GET /api/onlinetests/:id` - 获取单个网测
+- `POST /api/onlinetests` - 创建新网测
+- `PUT /api/onlinetests/:id` - 更新网测
+- `DELETE /api/onlinetests/:id` - 删除网测
+
+### 面试 (Interviews)
+
+- `GET /api/interviews/position/:positionId` - 获取特定职位的面试
+- `GET /api/interviews/:id` - 获取单个面试
+- `POST /api/interviews` - 创建新面试
+- `PUT /api/interviews/:id` - 更新面试
+- `DELETE /api/interviews/:id` - 删除面试

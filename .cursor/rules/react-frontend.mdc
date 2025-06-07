@@ -1,0 +1,54 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# React前端架构
+
+本项目使用React + TypeScript构建前端部分，采用组件化开发方式。
+
+## 技术栈
+
+- **框架**: React 18 + TypeScript
+- **UI组件库**: Chakra UI
+- **状态管理**: Redux Toolkit
+- **路由**: React Router 6
+- **数据获取**: React Query
+- **样式**: Emotion / Styled Components
+- **可视化**: Recharts
+
+## 组件结构
+
+本项目采用Feature-first组织结构，按功能模块划分代码：
+
+```
+src/
+├── components/          # 共享UI组件
+│   ├── Layout/          # 布局组件
+│   ├── Form/            # 表单组件
+│   └── UI/              # UI元素
+├── features/            # 功能模块
+│   ├── industries/      # 行业相关组件和逻辑
+│   ├── companies/       # 公司相关组件和逻辑
+│   ├── positions/       # 职位相关组件和逻辑
+│   ├── essays/          # 文书相关组件和逻辑
+│   ├── onlinetests/     # 网测相关组件和逻辑
+│   └── interviews/      # 面试相关组件和逻辑
+├── pages/               # 页面组件
+│   ├── Dashboard.tsx    # 首页仪表板
+│   ├── Industries.tsx   # 行业页面
+│   └── ...
+├── hooks/               # 自定义钩子
+├── services/            # API服务
+├── store/               # Redux状态管理
+└── utils/               # 工具函数
+```
+
+## 设计要点
+
+1. 使用React的函数式组件和Hooks
+2. 使用TypeScript确保类型安全
+3. 组件应遵循单一职责原则
+4. 使用ChakraUI实现响应式设计
+5. 使用React Router管理前端路由
+6. 使用React Query处理API请求和缓存

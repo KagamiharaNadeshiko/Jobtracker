@@ -1,0 +1,55 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 部署与CI/CD指南
+
+本项目使用GitHub Actions自动化构建、测试和部署流程，无需本地环境。
+
+## CI/CD配置
+
+CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
+
+工作流程包括:
+1. 代码检出
+2. Node.js环境设置
+3. MongoDB实例启动（用于测试）
+4. 后端依赖安装
+5. React前端创建与构建
+   - 安装React、TypeScript和相关库
+   - 创建前端目录结构
+   - 构建前端应用
+6. 代码规范检查
+7. 测试执行
+8. 自动部署到生产环境
+
+## 测试配置
+
+测试配置文件: [__tests__/server.test.js](mdc:__tests__/server.test.js)
+
+当前测试包括:
+- API端点可用性测试
+- 数据库连接测试
+
+## 环境变量
+
+部署需要以下环境变量:
+
+- `NODE_ENV`: 运行环境 (development, production, test)
+- `PORT`: 服务器端口
+- `MONGO_URI`: MongoDB连接字符串
+
+## 部署要求
+
+在GitHub仓库设置中需要添加以下Secrets:
+- `HOST`: 部署服务器的IP或域名
+- `USERNAME`: SSH登录用户名
+- `SSH_PRIVATE_KEY`: SSH私钥
+
+## 部署服务器要求
+
+- Node.js 16+
+- MongoDB 5.0+
+- PM2进程管理器
+- 足够权限以执行部署脚本命令

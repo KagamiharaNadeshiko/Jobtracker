@@ -1,0 +1,46 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 数据模型与关系
+
+本系统使用MongoDB作为数据库，通过Mongoose进行对象映射。以下是主要数据模型及其关系:
+
+## 核心模型
+
+1. **行业 (Industry)**
+   - 定义: [server/models/Industry.js](mdc:server/models/Industry.js)
+   - 字段: name, description
+   - 关系: 一个行业可以有多个公司
+
+2. **公司 (Company)**
+   - 定义: [server/models/Company.js](mdc:server/models/Company.js)
+   - 字段: name, industry(引用Industry), description, website
+   - 关系: 一个公司属于一个行业，可以有多个职位
+
+3. **职位 (Position)**
+   - 定义: [server/models/Position.js](mdc:server/models/Position.js)
+   - 字段: title, company(引用Company), description, status, resumeDeadline, onlineTestDeadline
+   - 关系: 一个职位属于一个公司，可以有多个文书、网测和面试
+
+4. **申请文书 (Essay)**
+   - 定义: [server/models/Essay.js](mdc:server/models/Essay.js)
+   - 字段: position(引用Position), question, answer
+   - 关系: 一个文书属于一个职位申请
+
+5. **网测 (OnlineTest)**
+   - 定义: [server/models/OnlineTest.js](mdc:server/models/OnlineTest.js)
+   - 字段: position(引用Position), type, description, content, notes, completed
+   - 关系: 一个网测属于一个职位申请
+
+6. **面试 (Interview)**
+   - 定义: [server/models/Interview.js](mdc:server/models/Interview.js)
+   - 字段: position(引用Position), round, type, date, location, questions, notes, result
+   - 关系: 一个面试属于一个职位申请
+
+## 数据关系图
+
+```
+Industry 1:N Company 1:N Position 1:N Essay/OnlineTest/Interview
+```
