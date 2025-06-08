@@ -27,7 +27,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
 
     - name: 启动 MongoDB
       uses: supercharge/mongodb-github-action@1.8.0
@@ -94,7 +93,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
 
     - name: 安装依赖
       run: |
