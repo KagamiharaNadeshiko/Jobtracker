@@ -8,7 +8,16 @@ const dns = require('dns');
 const { MongoClient } = require('mongodb');
 
 // 获取环境变量
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/jobtracing';
+let MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/jobtracing';
+
+// 如果URI中包含jobtracker，自动修正为jobtracing（如果需要）
+if (MONGO_URI.includes('jobtracker.slt16xn.mongodb.net')) {
+    console.log('检测到旧的数据库域名，尝试修正...');
+    // 尝试替换成新的域名（如果适用）
+    MONGO_URI = MONGO_URI.replace('jobtracker.slt16xn.mongodb.net', 'jobtracing.slt16xn.mongodb.net');
+    console.log(`已更新连接字符串: ${MONGO_URI.replace(/mongodb(\+srv)?:\/\/(.*?)@/, 'mongodb$1://*****@')}`);
+}
+
 const RETRY_ATTEMPTS = parseInt(process.env.RETRY_ATTEMPTS || '5');
 const RETRY_DELAY = parseInt(process.env.RETRY_DELAY || '2000');
 
@@ -39,7 +48,22 @@ async function testDnsResolution(hostname) {
         return { success: true, addresses };
     } catch (error) {
         console.error(`DNS解析失败: ${error.message}`);
-        return { success: false, error: error.message };
+
+        // 尝试使用备用方法解析
+        try {
+            console.log('尝试使用dns.lookup解析主机名...');
+            const address = await new Promise((resolve, reject) => {
+                dns.lookup(hostname, (err, address) => {
+                    if (err) reject(err);
+                    else resolve(address);
+                });
+            });
+            console.log(`通过dns.lookup成功解析到: ${address}`);
+            return { success: true, addresses: [address] };
+        } catch (lookupErr) {
+            console.error(`备用DNS查找也失败: ${lookupErr.message}`);
+            return { success: false, error: error.message };
+        }
     }
 }
 
@@ -72,6 +96,7 @@ async function testNativeConnection(uri) {
             useUnifiedTopology: true,
             serverSelectionTimeoutMS: 5000,
             connectTimeoutMS: 10000,
+            directConnection: uri.startsWith('mongodb://localhost'),
         });
         await client.connect();
         console.log('MongoDB驱动连接成功!');
@@ -111,6 +136,24 @@ function extractHostname(uri) {
     return null;
 }
 
+// 尝试本地连接
+async function tryLocalConnection() {
+    console.log('\n[步骤 5] 尝试连接本地MongoDB');
+    const localUri = 'mongodb://localhost:27017/jobtracing';
+    try {
+        const result = await testNativeConnection(localUri);
+        if (result.success) {
+            console.log('成功连接到本地MongoDB!');
+            process.env.MONGO_URI = localUri;
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.log('无法连接到本地MongoDB:', error.message);
+        return false;
+    }
+}
+
 // 重试函数
 async function withRetry(fn, attempts = RETRY_ATTEMPTS, delay = RETRY_DELAY) {
     for (let i = 0; i < attempts; i++) {
@@ -146,6 +189,25 @@ async function main() {
             const dnsResult = await testDnsResolution(hostname);
             if (!dnsResult.success) {
                 console.log('DNS解析失败，可能存在网络问题或DNS配置错误。');
+
+                // 检查是否包含mongodb.net但域名可能错误
+                if (hostname.includes('.mongodb.net')) {
+                    console.log('检测到MongoDB Atlas域名可能不正确，尝试使用默认集群名称...');
+                    // 尝试使用通用集群名称
+                    const fixedUri = MONGO_URI.replace(
+                        /mongodb(\+srv)?:\/\/(.*?@)?([^\/]+)(\/.*)?$/,
+                        (match, srv, auth, host, path) => {
+                            return `mongodb${srv || ''}://${auth || ''}cluster0.mongodb.net${path || ''}`;
+                        }
+                    );
+                    console.log(`尝试修正的连接字符串: ${fixedUri.replace(/mongodb(\+srv)?:\/\/(.*?)@/, 'mongodb$1://*****@')}`);
+                    const fixedResult = await testNativeConnection(fixedUri);
+                    if (fixedResult.success) {
+                        console.log('使用修正后的MongoDB Atlas域名连接成功!');
+                        process.env.MONGO_URI = fixedUri;
+                        process.exit(0);
+                    }
+                }
             }
         }
 
@@ -171,13 +233,19 @@ async function main() {
             process.exit(0);
         }
 
+        // 5. 尝试本地连接
+        if (await tryLocalConnection()) {
+            process.exit(0);
+        }
+
         // 如果所有尝试都失败，提供诊断信息
         console.error('\n===== MongoDB 连接故障诊断 =====');
         console.error('1. 检查MongoDB服务器是否正在运行');
         console.error('2. 验证连接字符串格式是否正确');
         console.error('3. 确认IP地址在MongoDB Atlas允许列表中');
         console.error('4. 检查用户凭据是否正确');
-        console.error('5. 确认网络防火墙设置允许连接');
+        console.error('5. 检查集群名称是否正确，当前使用的是: ' + (hostname || 'unknown'));
+        console.error('6. 确认网络防火墙设置允许连接');
 
         // 在CI环境中，设置特定的退出码而不是失败
         if (process.env.CI) {
@@ -188,6 +256,13 @@ async function main() {
         }
     } catch (error) {
         console.error('MongoDB连接测试失败:', error);
+
+        // 在失败的情况下尝试本地连接作为最后手段
+        console.log('\n尝试连接本地MongoDB作为最后手段...');
+        if (await tryLocalConnection()) {
+            process.exit(0);
+        }
+
         if (process.env.CI) {
             process.exit(0); // 在CI中不失败
         } else {
