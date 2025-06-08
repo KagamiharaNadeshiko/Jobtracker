@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Node.js CI/CD
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x]
+        node-version: [16.x]
         mongodb-version: ['4.4']
 
     steps:
@@ -45,4 +45,36 @@ jobs:
         npm ci
         npm run build
       env:
-        CI: true 
+        CI: true
+        
+    - name: Setup MongoDB Atlas CLI
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/mongodb/mongocli/main/scripts/install.sh | sh
+        export PATH=$PATH:$HOME/.mongocli/bin
+        mongocli config init
+      env:
+        MCLI_PUBLIC_API_KEY: ${{ secrets.ATLAS_API_PUBLIC_KEY }}
+        MCLI_PRIVATE_API_KEY: ${{ secrets.ATLAS_API_PRIVATE_KEY }}
+        
+    - name: Deploy to MongoDB Atlas App Services
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        # Package and deploy the Atlas App Services app
+        cd app_config
+        zip -r ../app_config.zip .
+        mongocli appservices app deploy ${{ secrets.REALM_APP_ID }} --file=../app_config.zip --follow
+      env:
+        MCLI_PUBLIC_API_KEY: ${{ secrets.ATLAS_API_PUBLIC_KEY }}
+        MCLI_PRIVATE_API_KEY: ${{ secrets.ATLAS_API_PRIVATE_KEY }}
+    
+    - name: Deploy to hosting service
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        echo "Deploying to production server..."
+        # Add deployment commands here based on your hosting provider
+        # For example: netlify deploy, vercel deploy, etc.
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        REALM_APP_ID: ${{ secrets.REALM_APP_ID }} 
