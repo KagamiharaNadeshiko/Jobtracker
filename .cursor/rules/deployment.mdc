@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # 部署与CI/CD指南
 
-本项目使用GitHub Actions自动化构建、测试和部署流程，无需本地环境。
+本项目使用GitHub Actions自动化构建、测试和部署流程，实现完全自动化的MongoDB Atlas与App Services部署。
 
 ## CI/CD配置
 
@@ -15,14 +15,18 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 1. 代码检出
 2. Node.js环境设置
 3. MongoDB实例启动（用于测试）
-4. 后端依赖安装
-5. React前端创建与构建
-   - 安装React、TypeScript和相关库
-   - 创建前端目录结构
-   - 构建前端应用
-6. 代码规范检查
-7. 测试执行
-8. 自动部署到生产环境
+4. 依赖安装与测试
+5. MongoDB Atlas资源自动创建
+   - Atlas集群创建（如不存在）
+   - 数据库用户配置
+   - Atlas App Services应用创建
+6. 前端构建
+   - 构建React应用
+   - 生成优化的静态文件
+7. 后端函数部署
+   - 部署到Atlas App Services
+8. 前端部署
+   - 部署到Atlas App Services Hosting
 
 ## 测试配置
 
@@ -39,17 +43,23 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 - `NODE_ENV`: 运行环境 (development, production, test)
 - `PORT`: 服务器端口
 - `MONGO_URI`: MongoDB连接字符串
+- `REALM_APP_ID`: Atlas App Services应用ID
 
-## 部署要求
+## GitHub Secrets配置
 
 在GitHub仓库设置中需要添加以下Secrets:
-- `HOST`: 部署服务器的IP或域名
-- `USERNAME`: SSH登录用户名
-- `SSH_PRIVATE_KEY`: SSH私钥
+- `ATLAS_ORG_ID`: MongoDB Atlas组织ID
+- `ATLAS_PROJECT_ID`: MongoDB Atlas项目ID
+- `ATLAS_PUBLIC_API_KEY`: Atlas API公钥
+- `ATLAS_PRIVATE_API_KEY`: Atlas API私钥
+- `MONGO_USERNAME`: 数据库用户名
+- `MONGO_PASSWORD`: 数据库密码
+- `JWT_SECRET`: JWT密钥
 
-## 部署服务器要求
+## 自动化部署流程
 
-- Node.js 16+
-- MongoDB 5.0+
-- PM2进程管理器
-- 足够权限以执行部署脚本命令
+1. 推送到master/main分支
+2. GitHub Actions自动触发CI/CD流水线
+3. 自动创建/配置所有MongoDB Atlas资源
+4. 构建和部署前后端代码
+5. 部署完成后，应用可通过以下URL访问：`https://<app-id>.mongodbstitch.com`

@@ -20,9 +20,9 @@
                 "config": {
                     "autoConfirm": true,
                     "resetPasswordSubject": "Reset Your Job Tracking Password",
-                    "resetPasswordUrl": "https://jobtracing-app.realm-app.mongodb.com/reset-password",
+                    "resetPasswordUrl": "https://jobtracing-app.services.cloud.mongodb.com/reset-password",
                     "confirmEmailSubject": "Confirm Your Email for Job Tracking System",
-                    "emailConfirmationUrl": "https://jobtracing-app.realm-app.mongodb.com/confirm-email",
+                    "emailConfirmationUrl": "https://jobtracing-app.services.cloud.mongodb.com/confirm-email",
                     "runConfirmationFunction": false
                 },
                 "disabled": false

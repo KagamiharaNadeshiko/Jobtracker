@@ -131,6 +131,12 @@ jobs:
           echo "Atlas App Services application already exists, using ID: $APP_ID"
         fi
 
+    # 获取应用的域名
+    - name: Get App Services Domain
+      run: |
+        APP_DOMAIN=$(atlas apps describe --app-id ${{ env.REALM_APP_ID }} --output json | jq -r '.domain')
+        echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
+
     - name: Create production .env file
       run: |
         echo "NODE_ENV=production" > .env
@@ -143,7 +149,7 @@ jobs:
     - name: Create client .env file
       run: |
         echo "REACT_APP_REALM_APP_ID=${{ env.REALM_APP_ID }}" > client/.env
-        echo "REACT_APP_API_URL=https://${{ env.REALM_APP_ID }}.mongodbstitch.com/api" >> client/.env
+        echo "REACT_APP_API_URL=https://${{ env.APP_DOMAIN }}/api" >> client/.env
 
     - name: Install dependencies
       run: npm install
@@ -166,9 +172,13 @@ jobs:
         # 复制前端构建文件到hosting目录
         cp -R client/build/* app_config/hosting/
         
-        # 给部署准备脚本添加执行权限并运行
-        chmod +x app_config/prepare_deployment.sh
-        cd app_config && ./prepare_deployment.sh ${{ env.REALM_APP_ID }}
+        # 给部署准备脚本添加执行权限
+        if [ -f app_config/prepare_deployment.sh ]; then
+          chmod +x app_config/prepare_deployment.sh
+          cd app_config && ./prepare_deployment.sh ${{ env.REALM_APP_ID }}
+        else
+          echo "部署准备脚本不存在，继续部署流程..."
+        fi
 
     # 部署到Atlas App Services
     - name: Deploy to Atlas App Services
@@ -183,4 +193,4 @@ jobs:
         atlas apps hosting assets upload --app-id ${{ env.REALM_APP_ID }} --path hosting --include "**/*" --overwrite
         
         echo "Deployment to MongoDB Atlas App Services completed successfully!"
-        echo "Your application is now available at: https://${{ env.REALM_APP_ID }}.mongodbstitch.com" 
+        echo "Your application is now available at: https://${{ env.APP_DOMAIN }}" 

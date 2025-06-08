@@ -27,10 +27,9 @@ app.use(fileUpload({
 // 定义API路由
 app.use('/api/industries', require('./server/routes/industries'));
 app.use('/api/companies', require('./server/routes/companies'));
-app.use('/api/jobs', require('./server/routes/jobs'));
-app.use('/api/applications', require('./server/routes/applications'));
+app.use('/api/positions', require('./server/routes/positions'));
 app.use('/api/essays', require('./server/routes/essays'));
-app.use('/api/online-tests', require('./server/routes/onlineTests'));
+app.use('/api/online-tests', require('./server/routes/onlinetests'));
 app.use('/api/interviews', require('./server/routes/interviews'));
 app.use('/api/users', require('./server/routes/users'));
 app.use('/api/auth', require('./server/routes/auth'));
