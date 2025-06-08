@@ -65,6 +65,16 @@ jobs:
         CI: true
         MONGO_URI: ${{ env.TEST_DB_URI }}
         DEBUG: "mongodb:*"
+        
+    - name: 诊断远程MongoDB连接
+      run: |
+        echo "===== 执行MongoDB连接诊断 ====="
+        # 尝试使用诊断脚本测试连接
+        node .github/scripts/diagnose_connection.js
+      env:
+        CI: true
+        MONGO_URI: "mongodb+srv://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@jobtracing.slt16xn.mongodb.net/jobtracing?retryWrites=true&w=majority"
+      continue-on-error: true
 
     - name: 运行服务器测试
       run: |
@@ -118,6 +128,41 @@ jobs:
         atlas config set org_id ${{ secrets.ATLAS_ORG_ID }} --force
         atlas config set project_id ${{ secrets.ATLAS_PROJECT_ID }} --force
       continue-on-error: false
+
+    - name: 诊断 MongoDB Atlas 连接
+      run: |
+        echo "===== MongoDB Atlas 诊断 ====="
+        echo "检查 Atlas CLI 配置..."
+        atlas config ls
+        
+        echo "\n检查可用的项目..."
+        atlas projects ls --output json
+        
+        echo "\n检查可用的集群..."
+        atlas clusters ls --output json || echo "无法列出集群，可能是API密钥权限问题"
+        
+        echo "\n检查网络连接..."
+        ping -c 4 mongodb.net || echo "无法ping mongodb.net域名，但这可能不影响连接"
+        
+        echo "\n检查DNS解析..."
+        nslookup slt16xn.mongodb.net || echo "DNS解析可能有问题，但可能不影响直接连接"
+      continue-on-error: true
+      
+    - name: 运行连接诊断工具
+      run: |
+        echo "===== 执行完整的MongoDB连接诊断 ====="
+        # 使用您提供的用户名和密码构建连接字符串
+        export MONGO_URI="mongodb+srv://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@jobtracing.slt16xn.mongodb.net/jobtracing?retryWrites=true&w=majority"
+        # 运行诊断脚本
+        node .github/scripts/diagnose_connection.js
+        
+        # 如果上面的连接失败，尝试替代格式
+        if [ $? -ne 0 ]; then
+          echo "\n尝试替代连接格式..."
+          export MONGO_URI="mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@jobtracing.slt16xn.mongodb.net/jobtracing?retryWrites=true&w=majority"
+          node .github/scripts/diagnose_connection.js
+        fi
+      continue-on-error: true
 
     - name: 创建或获取 MongoDB Atlas 集群
       id: atlas-cluster
@@ -209,6 +254,23 @@ jobs:
         # 获取应用域名
         APP_DOMAIN=$(atlas apps describe --app-id ${{ env.REALM_APP_ID }} --output json | jq -r '.domain')
         echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
+
+    - name: 诊断 App Services 连接
+      run: |
+        echo "===== App Services 诊断 ====="
+        echo "检查App Services应用状态..."
+        atlas apps describe --app-id ${{ env.REALM_APP_ID }} --output json || echo "无法获取App详情，可能是权限问题"
+        
+        echo "\n检查可用的认证提供者..."
+        atlas apps auth-providers list --app-id ${{ env.REALM_APP_ID }} --output json || echo "无法列出认证提供者"
+        
+        echo "\n检查应用域名解析..."
+        if [ -n "${{ env.APP_DOMAIN }}" ]; then
+          nslookup ${{ env.APP_DOMAIN }} || echo "域名解析可能有问题，但可能不影响直接访问"
+        else
+          echo "应用域名未设置"
+        fi
+      continue-on-error: true
 
     - name: 创建生产环境配置
       run: |
