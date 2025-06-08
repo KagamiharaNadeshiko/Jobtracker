@@ -3,62 +3,61 @@ description:
 globs:
 alwaysApply: false
 ---
-# 用户认证与授权系统
+# 用户认证与授权
 
-本项目实现了完整的用户认证系统，包括注册、登录、JWT验证和受保护路由。
-
-## 核心文件
-
-- 用户模型: [server/models/User.js](mdc:server/models/User.js)
-- 认证控制器: [server/controllers/auth.js](mdc:server/controllers/auth.js)
-- 认证中间件: [server/middleware/auth.js](mdc:server/middleware/auth.js)
-- 认证路由: [server/routes/auth.js](mdc:server/routes/auth.js)
-- 认证上下文: [client/src/context/AuthContext.tsx](mdc:client/src/context/AuthContext.tsx)
-- 私有路由组件: [client/src/components/PrivateRoute.tsx](mdc:client/src/components/PrivateRoute.tsx)
-
-## 用户模型
-
-用户模型包含以下字段:
-- `username`: 用户名（必需、唯一）
-- `email`: 电子邮件（必需、唯一、符合邮箱格式） 
-- `password`: 密码（必需、最小长度6字符，存储时加密）
-- `avatar`: 头像URL（可选）
-- `resetPasswordToken`: 重置密码令牌（可选）
-- `resetPasswordExpire`: 重置密码过期时间（可选）
+本系统采用JWT（JSON Web Token）认证机制，并结合MongoDB Atlas App Services的认证功能。
 
 ## 认证流程
 
-1. **注册流程**:
-   - 用户提供用户名、电子邮箱和密码
-   - 验证输入是否有效
-   - 检查用户名和邮箱是否已存在
-   - 密码加密存储
-   - 创建用户并颁发JWT令牌
+1. 用户注册/登录
+2. 服务器验证凭据并生成JWT
+3. JWT存储在客户端（localStorage/Cookie）
+4. 客户端请求时在Authorization头中附加JWT
+5. 服务器使用中间件验证JWT并授权访问
 
-2. **登录流程**:
-   - 用户提供电子邮箱和密码
-   - 验证电子邮箱是否存在
-   - 验证密码是否匹配
-   - 颁发JWT令牌
+## 认证实现
 
-3. **认证中间件**:
-   - 检查请求头或Cookie中是否存在有效token
-   - 验证token并解码
-   - 将用户数据附加到请求对象
+### 服务器端认证
 
-## 前端认证状态
+- 用户模型: [server/models/User.js](mdc:server/models/User.js)
+- 用户路由: [server/routes/users.js](mdc:server/routes/users.js)
+- 认证中间件: [server/middleware/auth.js](mdc:server/middleware/auth.js)
 
-AuthContext提供以下功能:
-- `isAuthenticated`: 用户是否已登录
-- `user`: 当前用户信息
-- `login(email, password)`: 登录功能
-- `register(username, email, password)`: 注册功能
-- `logout()`: 退出登录功能
+### Atlas App Services认证
 
-## 安全最佳实践
+- 认证提供者配置: [app_config/auth/providers.json](mdc:app_config/auth/providers.json)
+- 认证关联函数: [app_config/functions/getRealmFunctions.js](mdc:app_config/functions/getRealmFunctions.js)
 
-1. 所有密码使用bcrypt加密存储
-2. 敏感路由使用JWT认证保护
-3. 令牌存储在HttpOnly cookie中
-4. 密码字段在查询时默认隐藏
-5. 输入验证在前端和后端双重实现
+## JWT配置
+
+- 密钥: 环境变量`JWT_SECRET`
+- 有效期: 环境变量`JWT_EXPIRE` (默认24小时)
+- 负载格式:
+  ```json
+  {
+    "user": {
+      "id": "<用户ID>"
+    }
+  }
+  ```
+
+## 密码安全
+
+- 使用bcryptjs进行密码哈希
+- 密码存储前自动哈希
+- 密码字段在查询时默认不返回
+
+## 权限控制
+
+系统采用基于用户所有权的权限模型:
+
+1. 每个资源（行业、公司、职位等）都有`createdBy`字段
+2. 用户只能访问自己创建的资源
+3. App Services的同步规则通过`%%user.id`进行匹配
+4. Express API通过认证中间件验证用户JWT
+
+## 认证错误处理
+
+- 无效JWT: 返回401错误
+- 访问未授权资源: 返回403错误
+- 用户不存在: 返回404错误

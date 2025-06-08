@@ -1,49 +1,68 @@
 {
-    "name": "jobtracking",
+    "name": "jobtracing",
     "version": "1.0.0",
-    "description": "求职跟踪系统 - 记录求职过程中的公司、职位、文书、网测和面试情况",
+    "description": "Job Application Tracking System",
+    "type": "commonjs",
     "main": "server.js",
+    "engines": {
+        "node": ">=16.x",
+        "npm": ">=8.x"
+    },
     "scripts": {
         "start": "node server.js",
         "server": "nodemon server.js",
-        "client": "cd client && npm start",
+        "client": "npm start --prefix client",
         "dev": "concurrently \"npm run server\" \"npm run client\"",
-        "build": "cd client && npm run build",
-        "install-client": "cd client && npm install",
-        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm run install-client && npm run build",
-        "test": "jest --forceExit --detectOpenHandles"
+        "test": "jest --verbose",
+        "build": "npm install && cd client && npm install && npm run build",
+        "install-all": "npm install && cd client && npm install",
+        "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "prepare-mongo": "node .github/scripts/prepare_mongo.js",
+        "deploy": "npm run build && atlas apps deploy --app-id $REALM_APP_ID --local app_config --include-package-json"
     },
-    "keywords": [
-        "求职",
-        "跟踪",
-        "面试",
-        "网测",
-        "job",
-        "tracking"
-    ],
-    "author": "",
-    "license": "MIT",
+    "jest": {
+        "testEnvironment": "node",
+        "coveragePathIgnorePatterns": [
+            "/node_modules/"
+        ],
+        "testTimeout": 30000
+    },
     "dependencies": {
         "bcryptjs": "^2.4.3",
-        "cookie-parser": "^1.4.6",
+        "colors": "^1.4.0",
         "cors": "^2.8.5",
         "dotenv": "^16.0.3",
-        "express": "^4.18.2",
-        "express-fileupload": "^1.4.0",
+        "express": "^4.17.3",
+        "express-async-handler": "^1.2.0",
         "express-validator": "^7.0.1",
         "jsonwebtoken": "^9.0.0",
-        "mongoose": "^6.7.2",
-        "multer": "^1.4.5-lts.1",
-        "mongodb": "^5.0.0",
-        "realm-web": "^2.0.0"
+        "mongodb": "^5.3.0",
+        "mongoose": "^7.0.3",
+        "morgan": "^1.10.0",
+        "multer": "^1.4.5-lts.1"
     },
     "devDependencies": {
-        "concurrently": "^7.5.0",
-        "jest": "^29.3.1",
-        "nodemon": "^2.0.20",
+        "concurrently": "^8.0.1",
+        "eslint": "^8.38.0",
+        "jest": "^29.5.0",
+        "nodemon": "^2.0.22",
         "supertest": "^6.3.3"
     },
-    "engines": {
-        "node": ">=14.0.0"
-    }
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/username/jobtracing.git"
+    },
+    "keywords": [
+        "job",
+        "application",
+        "tracking",
+        "mongodb",
+        "express",
+        "react",
+        "node"
+    ],
+    "author": "",
+    "license": "MIT"
 }

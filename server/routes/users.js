@@ -11,9 +11,9 @@ const User = require('../models/User');
 function validateUser(user) {
     const errors = [];
 
-    // 验证姓名
-    if (!user.name || user.name.trim() === '') {
-        errors.push({ msg: '姓名不能为空' });
+    // 验证用户名
+    if (!user.username || user.username.trim() === '') {
+        errors.push({ msg: '用户名不能为空' });
     }
 
     // 验证电子邮件
@@ -42,7 +42,7 @@ router.post('/', async(req, res) => {
         return res.status(400).json({ errors });
     }
 
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
     try {
         // 检查用户是否已存在
@@ -51,16 +51,12 @@ router.post('/', async(req, res) => {
             return res.status(400).json({ msg: '用户已存在' });
         }
 
-        // 创建新用户
+        // 创建新用户 - 密码会在save时通过pre-save钩子自动加密
         user = new User({
-            name,
+            username,
             email,
             password
         });
-
-        // 加密密码
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
 
         // 保存用户
         await user.save();

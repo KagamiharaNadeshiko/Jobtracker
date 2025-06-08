@@ -5,228 +5,241 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+# 定义环境变量
+env:
+  NODE_VERSION: 18.x
+  MONGODB_VERSION: 5.0
+  TEST_DB_URI: mongodb://localhost:27017/jobtracing_test
 
 jobs:
-  build:
+  build-and-test:
+    name: 构建与测试
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x]
-        mongodb-version: [5.0]
+    timeout-minutes: 15  # 设置作业超时时间
 
     steps:
-    - uses: actions/checkout@v3
+    - name: 检出代码
+      uses: actions/checkout@v3
 
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: 设置 Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'  # 启用 npm 缓存
 
-    - name: Start MongoDB
+    - name: 启动 MongoDB
       uses: supercharge/mongodb-github-action@1.8.0
       with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-version: ${{ env.MONGODB_VERSION }}
 
-    - name: Create .env file
+    - name: 创建测试环境配置
       run: |
         echo "NODE_ENV=test" > .env
-        echo "MONGO_URI=mongodb://localhost:27017/jobtracing_test" >> .env
+        echo "MONGO_URI=${{ env.TEST_DB_URI }}" >> .env
         echo "PORT=5000" >> .env
         echo "JWT_SECRET=test_secret" >> .env
         echo "JWT_EXPIRE=1d" >> .env
 
-    # 安装所有依赖并显式安装express-validator
-    - name: Install dependencies
+    - name: 安装服务器依赖
+      id: npm-cache
       run: |
-        npm install
-        npm install express-validator@7.0.1 bcryptjs jsonwebtoken
-        npm list express-validator
+        npm ci || npm install  # 首先尝试clean install，失败则使用regular install
+        npm install express-validator@7.0.1 bcryptjs jsonwebtoken --no-save
 
-    - name: Install frontend dependencies
+    - name: 安装前端依赖
+      working-directory: client
       run: |
-        cd client
-        npm install --legacy-peer-deps
-        npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
-        npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+        npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps --no-save
+        npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps --no-save
 
-    # 确保MongoDB连接脚本被执行
-    - name: Set up MongoDB connection
+    - name: 设置 MongoDB 连接
       run: |
-        # 确保脚本目录存在
         mkdir -p .github/scripts
-        # 检查MongoDB连接
         node .github/scripts/prepare_mongo.js
       env:
         CI: true
-        MONGO_URI: mongodb://localhost:27017/jobtracing_test
+        MONGO_URI: ${{ env.TEST_DB_URI }}
         DEBUG: "mongodb:*"
 
-    - name: Run backend tests with debug
+    - name: 运行服务器测试
       run: |
-        # 打印环境信息
-        npm --version
-        node --version
-        # 检查依赖
-        npm list express-validator
-        npm list bcryptjs
-        npm list jsonwebtoken
-        npm list mongoose
-        # 使用增加的日志运行测试
+        # 系统信息
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        
+        # 运行测试
         NODE_DEBUG=mongodb,mongoose npm test -- __tests__/server.test.js
       env:
         CI: true
-        MONGO_URI: mongodb://localhost:27017/jobtracing_test
+        MONGO_URI: ${{ env.TEST_DB_URI }}
         DEBUG: "mongodb:*,mongoose:*"
 
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
+    name: 部署到 MongoDB Atlas
+    needs: build-and-test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # 增加部署超时时间
     
     steps:
-    - uses: actions/checkout@v3
+    - name: 检出代码
+      uses: actions/checkout@v3
     
-    - name: Set up Node.js
+    - name: 设置 Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'  # 启用 npm 缓存
 
-    # 安装所有依赖并显式安装express-validator
-    - name: Install dependencies
+    - name: 安装依赖
       run: |
-        npm install
-        npm install express-validator@7.0.1 bcryptjs jsonwebtoken
-        npm list express-validator
+        npm ci || npm install
+        npm install express-validator@7.0.1 bcryptjs jsonwebtoken --no-save
 
-    # 安装MongoDB Atlas CLI
-    - name: Install MongoDB Atlas CLI
+    - name: 安装 MongoDB Atlas CLI
+      id: atlas-cli-setup
       run: |
         curl -fsSL https://mongodb-js.github.io/mongosh/mongodb-atlas-cli.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-atlas.gpg
         echo "deb [signed-by=/usr/share/keyrings/mongodb-atlas.gpg] https://mongodb-js.github.io/mongosh/apt stable main" | sudo tee /etc/apt/sources.list.d/mongodb-atlas.list
         sudo apt-get update
         sudo apt-get install -y mongodb-atlas
+        echo "Atlas CLI version: $(atlas --version)"
+      continue-on-error: false
 
-    # 配置Atlas CLI
-    - name: Login to MongoDB Atlas
+    - name: 登录 MongoDB Atlas
+      id: atlas-login
       run: |
         atlas auth login-with-api-key --private-api-key ${{ secrets.ATLAS_PRIVATE_API_KEY }} --public-api-key ${{ secrets.ATLAS_PUBLIC_API_KEY }}
         atlas config set org_id ${{ secrets.ATLAS_ORG_ID }} --force
         atlas config set project_id ${{ secrets.ATLAS_PROJECT_ID }} --force
+      continue-on-error: false
 
-    # 检查并创建MongoDB集群
-    - name: Create MongoDB Atlas Cluster (if not exists)
+    - name: 创建或获取 MongoDB Atlas 集群
+      id: atlas-cluster
       run: |
         if ! atlas clusters list --output json | grep -q "jobtracing-cluster"; then
           echo "Creating new MongoDB Atlas cluster..."
           atlas clusters create jobtracing-cluster --provider AWS --region US_EAST_1 --tier M0 --diskSizeGB 2 --backup false
           
           echo "Waiting for cluster to be ready..."
-          atlas clusters watch jobtracing-cluster
+          atlas clusters watch jobtracing-cluster --timeout 15m
         else
-          echo "MongoDB cluster already exists, skipping creation."
+          echo "MongoDB cluster already exists, checking status..."
+          CLUSTER_STATE=$(atlas clusters describe jobtracing-cluster --output json | jq -r '.state')
+          if [ "$CLUSTER_STATE" != "IDLE" ]; then
+            echo "Cluster is in state $CLUSTER_STATE, waiting for it to become IDLE..."
+            atlas clusters watch jobtracing-cluster --timeout 5m
+          fi
         fi
+      continue-on-error: false
 
-    # 配置数据库用户和网络访问
-    - name: Configure Database Access
+    - name: 配置数据库访问
+      id: db-access
       run: |
+        # 创建数据库用户
         if ! atlas dbusers list --output json | grep -q "${{ secrets.MONGO_USERNAME }}"; then
           echo "Creating database user..."
           atlas dbusers create --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }} --role readWriteAnyDatabase
         else
-          echo "Database user already exists, skipping creation."
+          echo "Database user already exists"
         fi
         
+        # 添加IP访问控制
         echo "Adding global IP access..."
-        atlas accessList create --cidr 0.0.0.0/0 --comment "Allow access from anywhere" || true
+        atlas accessList create --cidr 0.0.0.0/0 --comment "Allow access from anywhere" || echo "IP access already configured"
 
-    # 获取集群标准连接字符串（非SRV格式）以避免DNS问题
-    - name: Get MongoDB Cluster Connection
-      id: mongo_connection
+    - name: 获取 MongoDB 连接信息
+      id: mongo-connection
       run: |
+        # 获取集群信息
         CLUSTER_INFO=$(atlas clusters describe jobtracing-cluster --output json)
+        
         # 获取标准连接字符串
         STANDARD_URI=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standard')
         echo "STANDARD_URI=$STANDARD_URI" >> $GITHUB_ENV
-        echo "Found standard connection string"
         
-        # 同时获取SRV连接字符串作为备用
+        # 获取 SRV 连接字符串作为备用
         SRV_URI=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standardSrv')
         echo "SRV_URI=$SRV_URI" >> $GITHUB_ENV
-        echo "Found SRV connection string"
         
-        # 提取集群主机信息，用于构建非SRV连接
+        # 获取集群主机
         CLUSTER_HOST=$(echo $STANDARD_URI | sed 's|mongodb://||' | sed 's|/.*||')
         echo "ATLAS_CLUSTER_HOST=$CLUSTER_HOST" >> $GITHUB_ENV
-        echo "Found cluster host: $CLUSTER_HOST"
-
-    # 获取带凭据的连接字符串
-    - name: Get MongoDB Connection String
-      id: mongo_uri
-      run: |
-        # 构建带凭据的标准连接字符串
-        CONNECTION_STRING="${{ env.STANDARD_URI }}"
-        CONNECTION_STRING=$(echo $CONNECTION_STRING | sed "s|mongodb://|mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@|")
+        
+        # 构建带凭据的连接字符串
+        CONNECTION_STRING=$(echo $STANDARD_URI | sed "s|mongodb://|mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@|")
         echo "connection_string=$CONNECTION_STRING" >> $GITHUB_ENV
-        echo "Using standard connection string format"
+        
+        # 验证连接字符串格式
+        if [[ $CONNECTION_STRING != mongodb://* ]]; then
+          echo "::error::Invalid connection string format"
+          exit 1
+        fi
 
-    # 检查并创建Atlas App Services应用
-    - name: Create Atlas App Services App (if not exists)
+    - name: 创建或配置 App Services 应用
+      id: app-services
       run: |
+        # 检查 App Services 应用
         if ! atlas apps list --output json | grep -q "jobtracing-app"; then
           echo "Creating new Atlas App Services application..."
           atlas apps create jobtracing-app --cluster jobtracing-cluster
           
+          # 获取应用ID
           APP_ID=$(atlas apps list --output json | jq -r '.[] | select(.name=="jobtracing-app") | .client_app_id')
-          echo "REALM_APP_ID=$APP_ID" >> $GITHUB_ENV
+          if [ -z "$APP_ID" ]; then
+            echo "::error::Failed to create App Services application"
+            exit 1
+          fi
           
+          echo "REALM_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "Enabling authentication providers..."
           atlas apps auth-providers create --type email-password --app-id $APP_ID
         else
+          # 获取现有应用ID
           APP_ID=$(atlas apps list --output json | jq -r '.[] | select(.name=="jobtracing-app") | .client_app_id')
           echo "REALM_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "Atlas App Services application already exists, using ID: $APP_ID"
         fi
-
-    # 获取应用的域名
-    - name: Get App Services Domain
-      run: |
+        
+        # 获取应用域名
         APP_DOMAIN=$(atlas apps describe --app-id ${{ env.REALM_APP_ID }} --output json | jq -r '.domain')
         echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
 
-    - name: Create production .env file
+    - name: 创建生产环境配置
       run: |
+        # 服务器环境变量
         echo "NODE_ENV=production" > .env
         echo "MONGO_URI=${{ env.connection_string }}" >> .env
         echo "PORT=8080" >> .env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
         echo "JWT_EXPIRE=30d" >> .env
         echo "REALM_APP_ID=${{ env.REALM_APP_ID }}" >> .env
-
-    - name: Create client .env file
-      run: |
+        
+        # 前端环境变量
         echo "REACT_APP_REALM_APP_ID=${{ env.REALM_APP_ID }}" > client/.env
         echo "REACT_APP_API_URL=https://${{ env.APP_DOMAIN }}/api" >> client/.env
 
-    - name: Build frontend
+    - name: 构建前端
+      working-directory: client
       run: |
-        cd client
-        npm install --legacy-peer-deps
-        npm run build
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+        CI=true npm run build
       env:
-        CI: true
         TSC_COMPILE_ON_ERROR: true
         SKIP_PREFLIGHT_CHECK: true
-    
-    # 准备App Services配置
-    - name: Configure App Services
+
+    - name: 准备 App Services 配置
+      id: prepare-config
       run: |
         mkdir -p app_config/hosting
         
         # 复制前端构建文件到hosting目录
-        cp -R client/build/* app_config/hosting/
+        cp -R client/build/* app_config/hosting/ || { echo "::error::Failed to copy frontend build"; exit 1; }
         
-        # 给部署准备脚本添加执行权限
+        # 执行部署准备脚本
         if [ -f app_config/prepare_deployment.sh ]; then
           chmod +x app_config/prepare_deployment.sh
           cd app_config && ./prepare_deployment.sh ${{ env.REALM_APP_ID }}
@@ -234,17 +247,36 @@ jobs:
           echo "部署准备脚本不存在，继续部署流程..."
         fi
 
-    # 部署到Atlas App Services
-    - name: Deploy to Atlas App Services
+    - name: 部署到 App Services
+      id: deploy
+      working-directory: app_config
       run: |
-        cd app_config
-        # 导出配置到Atlas App Services 
+        # 部署 App Services 配置和函数
         echo "Deploying configuration and functions to Atlas App Services..."
         atlas apps deploy --app-id ${{ env.REALM_APP_ID }} --local . --include-package-json
         
         # 部署前端静态文件
         echo "Deploying frontend static files to hosting..."
         atlas apps hosting assets upload --app-id ${{ env.REALM_APP_ID }} --path hosting --include "**/*" --overwrite
+      timeout-minutes: 10
+
+    - name: 验证部署
+      run: |
+        echo "Deployment completed. Verifying..."
+        # 验证应用可访问性
+        APP_URL="https://${{ env.APP_DOMAIN }}"
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APP_URL || echo "failed")
         
-        echo "Deployment to MongoDB Atlas App Services completed successfully!"
-        echo "Your application is now available at: https://${{ env.APP_DOMAIN }}" 
+        if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "301" ] || [ "$HTTP_STATUS" == "302" ]; then
+          echo "✅ Application is accessible at $APP_URL (Status: $HTTP_STATUS)"
+        else
+          echo "⚠️ Application might not be fully deployed yet. Status: $HTTP_STATUS"
+          echo "Please check manually at $APP_URL"
+          # 不将此视为失败，因为部署可能需要一些时间才生效
+        fi
+        
+        echo "==================== 部署摘要 ====================="
+        echo "MongoDB Atlas 集群: jobtracing-cluster"
+        echo "App Services 应用 ID: ${{ env.REALM_APP_ID }}"
+        echo "应用 URL: https://${{ env.APP_DOMAIN }}"
+        echo "==================================================" 

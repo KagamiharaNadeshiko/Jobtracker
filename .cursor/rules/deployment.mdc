@@ -28,22 +28,15 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 8. 前端部署
    - 部署到Atlas App Services Hosting
 
-## 测试配置
+## MongoDB连接脚本
 
-测试配置文件: [__tests__/server.test.js](mdc:__tests__/server.test.js)
+为提高连接稳定性，系统使用MongoDB连接准备脚本: 
+[.github/scripts/prepare_mongo.js](mdc:.github/scripts/prepare_mongo.js)
 
-当前测试包括:
-- API端点可用性测试
-- 数据库连接测试
-
-## 环境变量
-
-部署需要以下环境变量:
-
-- `NODE_ENV`: 运行环境 (development, production, test)
-- `PORT`: 服务器端口
-- `MONGO_URI`: MongoDB连接字符串
-- `REALM_APP_ID`: Atlas App Services应用ID
+此脚本能够:
+- 处理SRV格式DNS解析问题
+- 提供连接降级机制
+- 支持CI环境连接本地MongoDB实例
 
 ## GitHub Secrets配置
 
@@ -62,4 +55,13 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 2. GitHub Actions自动触发CI/CD流水线
 3. 自动创建/配置所有MongoDB Atlas资源
 4. 构建和部署前后端代码
-5. 部署完成后，应用可通过以下URL访问：`https://<app-id>.mongodbstitch.com`
+5. 部署完成后，应用可通过以下URL访问：`https://<app-id>.services.cloud.mongodb.com`
+
+## 环境变量
+
+部署需要以下环境变量:
+
+- `NODE_ENV`: 运行环境 (development, production, test)
+- `PORT`: 服务器端口
+- `MONGO_URI`: MongoDB连接字符串
+- `REALM_APP_ID`: Atlas App Services应用ID

@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
 # 数据模型与关系
@@ -9,38 +9,51 @@ alwaysApply: false
 
 ## 核心模型
 
-1. **行业 (Industry)**
+1. **用户 (User)**
+   - 定义: [server/models/User.js](mdc:server/models/User.js)
+   - 字段: username, email, password, avatar
+   - 关系: 一个用户可以创建多个行业、公司、职位等
+
+2. **行业 (Industry)**
    - 定义: [server/models/Industry.js](mdc:server/models/Industry.js)
-   - 字段: name, description
+   - 字段: name, description, createdBy(引用User)
    - 关系: 一个行业可以有多个公司
 
-2. **公司 (Company)**
+3. **公司 (Company)**
    - 定义: [server/models/Company.js](mdc:server/models/Company.js)
-   - 字段: name, industry(引用Industry), description, website
+   - 字段: name, industry(引用Industry), description, location, website, createdBy(引用User)
    - 关系: 一个公司属于一个行业，可以有多个职位
 
-3. **职位 (Position)**
+4. **职位 (Position)**
    - 定义: [server/models/Position.js](mdc:server/models/Position.js)
-   - 字段: title, company(引用Company), description, status, resumeDeadline, onlineTestDeadline
+   - 字段: title, company(引用Company), description, applicationType, testType, deadline, status, createdBy(引用User)
    - 关系: 一个职位属于一个公司，可以有多个文书、网测和面试
 
-4. **申请文书 (Essay)**
+5. **申请文书 (Essay)**
    - 定义: [server/models/Essay.js](mdc:server/models/Essay.js)
-   - 字段: position(引用Position), question, answer
+   - 字段: position(引用Position), question, answer, createdBy(引用User)
    - 关系: 一个文书属于一个职位申请
 
-5. **网测 (OnlineTest)**
+6. **网测 (OnlineTest)**
    - 定义: [server/models/OnlineTest.js](mdc:server/models/OnlineTest.js)
-   - 字段: position(引用Position), type, description, content, notes, completed
+   - 字段: position(引用Position), type, description, content, notes, completed, createdBy(引用User)
    - 关系: 一个网测属于一个职位申请
 
-6. **面试 (Interview)**
+7. **面试 (Interview)**
    - 定义: [server/models/Interview.js](mdc:server/models/Interview.js)
-   - 字段: position(引用Position), round, type, date, location, questions, notes, result
+   - 字段: position(引用Position), round, type, date, location, questions, notes, result, createdBy(引用User)
    - 关系: 一个面试属于一个职位申请
+
+## 权限控制
+
+所有模型都有`createdBy`字段，用于确保用户只能访问自己创建的数据。MongoDB App Services通过`sync/config.json`中定义的规则强制执行这些权限。
 
 ## 数据关系图
 
 ```
-Industry 1:N Company 1:N Position 1:N Essay/OnlineTest/Interview
+User 1:N Industry 1:N Company 1:N Position 1:N Essay/OnlineTest/Interview
 ```
+
+## App Services数据规则
+
+App Services配置位于[app_config/sync/config.json](mdc:app_config/sync/config.json)，定义了每个集合的读写权限。

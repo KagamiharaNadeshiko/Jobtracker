@@ -1,70 +1,63 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
-# 测试规范
+# 测试策略与实现
 
-本项目使用Jest和Supertest进行API和组件测试，确保系统的稳定性和可靠性。
+本项目使用Jest和SuperTest进行服务器端API测试，并支持CI环境的自动化测试。
 
-## 核心文件
+## 测试配置
 
-- API测试: [__tests__/api.test.js](mdc:__tests__/api.test.js)
-- 测试配置: [jest.config.js](mdc:jest.config.js)
+测试主配置文件：[__tests__/server.test.js](mdc:__tests__/server.test.js)
 
-## 测试类型
+## 测试环境设置
 
-1. **API测试**:
-   - 测试所有API端点的功能正确性
-   - 验证认证与授权逻辑
-   - 测试错误处理和边界情况
-   - 验证数据库交互
+测试使用独立的MongoDB实例：
+- 本地开发: 使用mongodb://localhost:27017/jobtracing_test
+- Github Actions CI: 使用内置MongoDB服务
 
-2. **组件测试**:
-   - 验证UI组件的渲染和行为
-   - 测试用户交互
-   - 验证状态更新和副作用
+## 测试用例
 
-3. **集成测试**:
-   - 测试多个组件或服务之间的交互
-   - 验证端到端的业务流程
+### API可用性测试
 
-## 测试结构
+验证主要API端点是否可访问：
+- 行业API: `GET /api/industries`
+- 公司API: `GET /api/companies`
+- 职位API: `GET /api/positions`
 
-每个测试文件应当按照以下结构组织:
-- 设置测试环境 (beforeAll/beforeEach)
-- 按功能分组测试用例 (describe)
-- 编写单个测试用例 (test/it)
-- 清理测试环境 (afterAll/afterEach)
+### 数据库连接测试
 
-## 测试覆盖范围
+验证MongoDB连接功能是否正常：
+- 连接建立测试
+- 错误处理测试
+- 连接降级测试
 
-项目的测试应覆盖以下关键功能:
-- 用户认证 (注册/登录/退出)
-- 行业管理 CRUD 操作
-- 公司管理 CRUD 操作
-- 职位管理 CRUD 操作
-- 文件上传功能
-- 数据查询与统计
+## CI集成
 
-## 最佳实践
+在GitHub Actions中：
+1. 自动启动MongoDB服务
+2. 设置测试环境变量
+3. 执行测试脚本
+4. 处理连接关闭
 
-1. **隔离测试**:
-   - 使用测试数据库而非生产数据库
-   - 测试前清理相关数据
-   - 避免测试之间的相互依赖
+## MongoDB连接降级机制
 
-2. **模拟外部依赖**:
-   - 使用mock函数模拟API调用
-   - 模拟第三方服务和依赖
-   - 控制时间相关的函数行为
+测试中采用连接降级机制，当遇到DNS解析问题或连接错误时：
+1. 尝试标准连接格式
+2. 若失败，降级为本地连接
+3. 确保测试能继续执行
 
-3. **断言与验证**:
-   - 明确测试的预期结果
-   - 验证状态变化和副作用
-   - 检查错误处理逻辑
+## 调试辅助功能
 
-4. **持续集成**:
-   - 测试作为CI/CD流程的一部分运行
-   - 在代码合并前运行所有测试
-   - 监控测试覆盖率指标
+包含一系列调试功能：
+- 依赖检查日志
+- MongoDB连接日志
+- 环境变量输出
+
+## 测试命令
+
+运行测试的命令：
+```bash
+npm test -- __tests__/server.test.js
+```
