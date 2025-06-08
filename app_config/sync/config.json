@@ -1,0 +1,194 @@
+{
+    "development_mode_enabled": false,
+    "service_name": "mongodb-atlas",
+    "database_name": "jobtracing",
+    "permissions": {
+        "rules": {},
+        "defaultRoles": []
+    },
+    "collection_configs": [{
+            "name": "industries",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [{
+                    "name": "read-only",
+                    "apply_when": {},
+                    "read": true,
+                    "write": false,
+                    "insert": false,
+                    "delete": false,
+                    "search": true
+                }],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true,
+                    "search": true
+                }]
+            }
+        },
+        {
+            "name": "companies",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [{
+                    "name": "read-only",
+                    "apply_when": {},
+                    "read": true,
+                    "write": false,
+                    "insert": false,
+                    "delete": false,
+                    "search": true
+                }],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true,
+                    "search": true
+                }]
+            }
+        },
+        {
+            "name": "positions",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true,
+                    "search": true
+                }]
+            }
+        },
+        {
+            "name": "essays",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true
+                }]
+            }
+        },
+        {
+            "name": "assessments",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true
+                }]
+            }
+        },
+        {
+            "name": "interviews",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [],
+                "roles": [{
+                    "name": "owner",
+                    "apply_when": {
+                        "%%user.id": "%%root.createdBy"
+                    },
+                    "read": true,
+                    "write": true,
+                    "insert": true,
+                    "delete": true
+                }]
+            }
+        },
+        {
+            "name": "users",
+            "before_insert_triggers": [],
+            "before_update_triggers": [],
+            "before_delete_triggers": [],
+            "after_insert_triggers": [],
+            "after_update_triggers": [],
+            "after_delete_triggers": [],
+            "document_permissions": {
+                "defaultRoles": [],
+                "roles": [{
+                        "name": "user",
+                        "apply_when": {
+                            "%%user.id": "%%root._id"
+                        },
+                        "read": true,
+                        "write": true,
+                        "insert": false,
+                        "delete": false
+                    },
+                    {
+                        "name": "admin",
+                        "apply_when": {
+                            "%%user.custom_data.role": "admin"
+                        },
+                        "read": true,
+                        "write": true,
+                        "insert": true,
+                        "delete": true
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -28,6 +28,14 @@ jobs:
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
+    - name: Create .env file
+      run: |
+        echo "NODE_ENV=test" > .env
+        echo "MONGO_URI=mongodb://localhost:27017/jobtracing_test" >> .env
+        echo "PORT=5000" >> .env
+        echo "JWT_SECRET=test_secret" >> .env
+        echo "JWT_EXPIRE=1d" >> .env
+
     - name: Install server dependencies
       run: npm install
 
@@ -35,24 +43,10 @@ jobs:
       run: |
         cd client
         npm install --legacy-peer-deps
-        # 确保使用正确的React版本
         npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
-        # 安装特定版本的ajv和ajv-keywords解决依赖冲突
         npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
 
-    - name: Build React frontend
-      run: cd client && npm run build
-      env:
-        CI: true
-        # 跳过TypeScript类型检查以避免构建错误
-        TSC_COMPILE_ON_ERROR: true
-        SKIP_PREFLIGHT_CHECK: true
-
-    - name: Run linting
-      run: npm run lint
-      continue-on-error: true
-
-    - name: Run backend tests only
+    - name: Run backend tests
       run: npm test -- __tests__/server.test.js
       env:
         CI: true
@@ -71,39 +65,122 @@ jobs:
       with:
         node-version: 18.x
 
-    - name: Install dependencies and build frontend
+    # 安装MongoDB Atlas CLI
+    - name: Install MongoDB Atlas CLI
       run: |
-        npm install
+        curl -fsSL https://mongodb-js.github.io/mongosh/mongodb-atlas-cli.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-atlas.gpg
+        echo "deb [signed-by=/usr/share/keyrings/mongodb-atlas.gpg] https://mongodb-js.github.io/mongosh/apt stable main" | sudo tee /etc/apt/sources.list.d/mongodb-atlas.list
+        sudo apt-get update
+        sudo apt-get install -y mongodb-atlas
+
+    # 配置Atlas CLI
+    - name: Login to MongoDB Atlas
+      run: |
+        atlas auth login-with-api-key --private-api-key ${{ secrets.ATLAS_PRIVATE_API_KEY }} --public-api-key ${{ secrets.ATLAS_PUBLIC_API_KEY }}
+        atlas config set org_id ${{ secrets.ATLAS_ORG_ID }} --force
+        atlas config set project_id ${{ secrets.ATLAS_PROJECT_ID }} --force
+
+    # 检查并创建MongoDB集群
+    - name: Create MongoDB Atlas Cluster (if not exists)
+      run: |
+        if ! atlas clusters list --output json | grep -q "jobtracing-cluster"; then
+          echo "Creating new MongoDB Atlas cluster..."
+          atlas clusters create jobtracing-cluster --provider AWS --region US_EAST_1 --tier M0 --mdbVersion 5.0 --diskSizeGB 2 --backup false
+          
+          echo "Waiting for cluster to be ready..."
+          atlas clusters watch jobtracing-cluster
+        else
+          echo "MongoDB cluster already exists, skipping creation."
+        fi
+
+    # 配置数据库用户和网络访问
+    - name: Configure Database Access
+      run: |
+        if ! atlas dbusers list --output json | grep -q "${{ secrets.MONGO_USERNAME }}"; then
+          echo "Creating database user..."
+          atlas dbusers create --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }} --role readWriteAnyDatabase
+        else
+          echo "Database user already exists, skipping creation."
+        fi
+        
+        echo "Adding global IP access..."
+        atlas accessList create --cidr 0.0.0.0/0 --comment "Allow access from anywhere" || true
+
+    # 获取连接字符串
+    - name: Get MongoDB Connection String
+      id: mongo_uri
+      run: |
+        CONNECTION_STRING=$(atlas clusters connectionString jobtracing-cluster --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }})
+        echo "connection_string=$CONNECTION_STRING" >> $GITHUB_ENV
+
+    # 检查并创建Atlas App Services应用
+    - name: Create Atlas App Services App (if not exists)
+      run: |
+        if ! atlas apps list --output json | grep -q "jobtracing-app"; then
+          echo "Creating new Atlas App Services application..."
+          atlas apps create jobtracing-app --cluster jobtracing-cluster
+          
+          APP_ID=$(atlas apps list --output json | jq -r '.[] | select(.name=="jobtracing-app") | .client_app_id')
+          echo "REALM_APP_ID=$APP_ID" >> $GITHUB_ENV
+          
+          echo "Enabling authentication providers..."
+          atlas apps auth-providers create --type email-password --app-id $APP_ID
+        else
+          APP_ID=$(atlas apps list --output json | jq -r '.[] | select(.name=="jobtracing-app") | .client_app_id')
+          echo "REALM_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "Atlas App Services application already exists, using ID: $APP_ID"
+        fi
+
+    - name: Create production .env file
+      run: |
+        echo "NODE_ENV=production" > .env
+        echo "MONGO_URI=${{ env.connection_string }}" >> .env
+        echo "PORT=8080" >> .env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+        echo "JWT_EXPIRE=30d" >> .env
+        echo "REALM_APP_ID=${{ env.REALM_APP_ID }}" >> .env
+
+    - name: Create client .env file
+      run: |
+        echo "REACT_APP_REALM_APP_ID=${{ env.REALM_APP_ID }}" > client/.env
+        echo "REACT_APP_API_URL=https://${{ env.REALM_APP_ID }}.mongodbstitch.com/api" >> client/.env
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build frontend
+      run: |
         cd client
         npm install --legacy-peer-deps
-        # 确保使用正确的React版本
-        npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
-        # 安装特定版本的ajv和ajv-keywords解决依赖冲突
-        npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
         npm run build
       env:
         CI: true
-        # 跳过TypeScript类型检查以避免构建错误
         TSC_COMPILE_ON_ERROR: true
         SKIP_PREFLIGHT_CHECK: true
     
-    - name: Deploy to Production
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd ~/jobtracing
-          git pull
-          npm install
-          cd client
-          rm -rf node_modules
-          npm install --legacy-peer-deps
-          # 确保使用正确的React版本
-          npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
-          # 安装特定版本的ajv和ajv-keywords解决依赖冲突
-          npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
-          npm run build
-          cd ..
-          pm2 restart jobtracing || pm2 start server.js --name jobtracing 
+    # 准备App Services配置
+    - name: Configure App Services
+      run: |
+        mkdir -p app_config/hosting
+        
+        # 复制前端构建文件到hosting目录
+        cp -R client/build/* app_config/hosting/
+        
+        # 给部署准备脚本添加执行权限并运行
+        chmod +x app_config/prepare_deployment.sh
+        cd app_config && ./prepare_deployment.sh ${{ env.REALM_APP_ID }}
+
+    # 部署到Atlas App Services
+    - name: Deploy to Atlas App Services
+      run: |
+        cd app_config
+        # 导出配置到Atlas App Services 
+        echo "Deploying configuration and functions to Atlas App Services..."
+        atlas apps deploy --app-id ${{ env.REALM_APP_ID }} --local . --include-package-json
+        
+        # 部署前端静态文件
+        echo "Deploying frontend static files to hosting..."
+        atlas apps hosting assets upload --app-id ${{ env.REALM_APP_ID }} --path hosting --include "**/*" --overwrite
+        
+        echo "Deployment to MongoDB Atlas App Services completed successfully!"
+        echo "Your application is now available at: https://${{ env.REALM_APP_ID }}.mongodbstitch.com" 

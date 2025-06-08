@@ -1,59 +1,55 @@
 const express = require('express');
+const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
+const fileUpload = require('express-fileupload');
 const connectDB = require('./server/config/db');
 
 // 加载环境变量
 dotenv.config();
 
+// 初始化Express应用
+const app = express();
+
 // 连接数据库
 connectDB();
 
-const app = express();
-
 // 中间件
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ extended: false }));
 app.use(cookieParser());
-app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:3000',
-    credentials: true
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/'
 }));
 
-// 静态文件夹
-app.use(express.static(path.join(__dirname, 'public')));
-
-// 定义路由
+// 定义API路由
 app.use('/api/industries', require('./server/routes/industries'));
 app.use('/api/companies', require('./server/routes/companies'));
-app.use('/api/positions', require('./server/routes/positions'));
+app.use('/api/jobs', require('./server/routes/jobs'));
+app.use('/api/applications', require('./server/routes/applications'));
 app.use('/api/essays', require('./server/routes/essays'));
-app.use('/api/onlinetests', require('./server/routes/onlinetests'));
+app.use('/api/online-tests', require('./server/routes/onlineTests'));
 app.use('/api/interviews', require('./server/routes/interviews'));
+app.use('/api/users', require('./server/routes/users'));
 app.use('/api/auth', require('./server/routes/auth'));
 app.use('/api/upload', require('./server/routes/upload'));
 
-// 在生产环境中提供静态文件
+// 在生产环境下提供静态资产
 if (process.env.NODE_ENV === 'production') {
-    // 设置静态文件夹
-    app.use(express.static(path.join(__dirname, '/client/build')));
+    app.use(express.static(path.join(__dirname, 'client/build')));
 
-    // 所有未匹配的路由都返回主页
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
-    });
-} else {
-    app.get('/', (req, res) => {
-        res.send('API 运行中...');
+        res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
     });
 }
 
-// 设置端口
+// 定义端口
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`服务器运行在端口 ${PORT}`);
-});
+// 启动服务器
+const server = app.listen(PORT, () => console.log(`服务器运行在端口 ${PORT}`));
 
-module.exports = app;
+// 为了测试，导出server
+module.exports = server;
