@@ -7,6 +7,17 @@ alwaysApply: false
 
 本系统前端基于React构建，采用现代化的组件架构和状态管理方案。
 
+## 远程前端开发环境
+
+**重要：本项目采用完全远程前端开发模式，不依赖本地调试环境。**
+
+远程前端开发特点：
+1. 前端代码通过GitHub Actions自动构建和部署
+2. 所有前端资源托管在MongoDB Atlas App Services Hosting
+3. 使用远程监控工具跟踪前端性能和错误
+4. 通过部署的URL访问和测试前端功能
+5. 使用GitHub进行代码审查和版本控制
+
 ## 技术栈
 
 - React - 前端UI库
@@ -95,4 +106,22 @@ alwaysApply: false
 - essayService - 文书相关API
 - onlineTestService - 网测相关API
 - interviewService - 面试相关API
+
+## 远程前端调试
+
+由于项目不进行本地调试，请使用以下远程调试方法：
+
+1. 使用浏览器开发者工具的网络和控制台面板
+2. 集成前端日志服务（如Sentry或LogRocket）
+3. 通过Atlas控制台监控前端API调用
+4. 使用GitHub Actions构建日志排查部署问题
+5. 添加详细的用户行为跟踪以识别问题
+
+## 远程前端性能监控
+
+1. 使用Web Vitals监控关键性能指标
+2. 通过Atlas App Services Metrics监控API性能
+3. 应用Google Analytics跟踪用户体验指标
+4. 部署Lighthouse CI进行自动化性能审计
+
 

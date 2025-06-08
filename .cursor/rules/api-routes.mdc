@@ -9,6 +9,17 @@ alwaysApply: false
 1. Express后端API (传统RESTful API)
 2. MongoDB Atlas App Services后端函数 (无服务器函数)
 
+## 远程API环境
+
+**重要：项目API采用完全远程部署模式，不依赖本地调试。**
+
+远程API特点：
+1. 所有API端点通过App Services Hosting部署
+2. 使用Atlas Functions作为无服务器函数
+3. API测试通过CI/CD流水线执行
+4. 通过Atlas提供的URL访问API
+5. API状态和日志通过Atlas控制台监控
+
 ## Express API路由
 
 以下是主要的Express API路由设计：
@@ -94,3 +105,13 @@ alwaysApply: false
 ## 认证中间件
 
 保护路由的认证中间件: [server/middleware/auth.js](mdc:server/middleware/auth.js)
+
+## 远程API调试
+
+由于项目不进行本地调试，请使用以下方法调试API：
+
+1. 使用MongoDB Atlas日志查看器监控API调用
+2. 通过App Services调试控制台检查函数执行
+3. 使用Postman或其他API客户端向远程端点发送请求
+4. 查看GitHub Actions工作流中的API测试结果
+5. 在Atlas控制台的网络分析中监控API流量

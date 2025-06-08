@@ -7,6 +7,17 @@ alwaysApply: false
 
 本系统采用JWT（JSON Web Token）认证机制，并结合MongoDB Atlas App Services的认证功能。
 
+## 远程认证环境
+
+**重要：本项目采用完全远程认证模式，不依赖本地调试环境。**
+
+远程认证特点：
+1. 通过MongoDB Atlas App Services管理用户认证
+2. 使用云端密钥管理JWT加密
+3. 认证测试通过CI/CD流水线执行
+4. 所有密钥和敏感信息存储在GitHub Secrets中
+5. 通过Atlas控制台监控认证流量和登录尝试
+
 ## 认证流程
 
 1. 用户注册/登录
@@ -30,7 +41,7 @@ alwaysApply: false
 
 ## JWT配置
 
-- 密钥: 环境变量`JWT_SECRET`
+- 密钥: 环境变量`JWT_SECRET`（存储在GitHub Secrets）
 - 有效期: 环境变量`JWT_EXPIRE` (默认24小时)
 - 负载格式:
   ```json
@@ -61,3 +72,13 @@ alwaysApply: false
 - 无效JWT: 返回401错误
 - 访问未授权资源: 返回403错误
 - 用户不存在: 返回404错误
+
+## 远程认证调试
+
+由于项目不进行本地调试，请使用以下方法调试认证问题：
+
+1. 使用MongoDB Atlas用户管理界面查看用户状态
+2. 通过App Services日志查看认证失败原因
+3. 使用JWT调试工具（如jwt.io）检查令牌有效性
+4. 检查GitHub Actions中的认证相关测试结果
+5. 在Atlas控制台监控用户登录和API访问模式

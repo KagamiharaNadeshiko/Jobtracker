@@ -7,6 +7,17 @@ alwaysApply: false
 
 本项目使用GitHub Actions自动化构建、测试和部署流程，实现完全自动化的MongoDB Atlas与App Services部署。
 
+## 非本地调试环境
+
+**重要：本项目采用完全远程开发/部署模式，不依赖本地调试。**
+
+远程开发要点：
+1. 所有功能开发和测试应通过CI/CD流水线完成
+2. 依赖GitHub Actions进行代码部署和功能验证
+3. 使用MongoDB Atlas进行远程数据管理而非本地MongoDB实例
+4. 通过App Services Hosting提供的URL访问和测试应用
+5. 使用GitHub提供的云开发环境或在线IDE进行代码编写
+
 ## CI/CD配置
 
 CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
@@ -36,7 +47,7 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 此脚本能够:
 - 处理SRV格式DNS解析问题
 - 提供连接降级机制
-- 支持CI环境连接本地MongoDB实例
+- 支持CI环境连接MongoDB实例
 
 ## GitHub Secrets配置
 
@@ -65,3 +76,13 @@ CI/CD配置文件: [.github/workflows/ci.yml](mdc:.github/workflows/ci.yml)
 - `PORT`: 服务器端口
 - `MONGO_URI`: MongoDB连接字符串
 - `REALM_APP_ID`: Atlas App Services应用ID
+
+## 远程调试指南
+
+由于项目不进行本地调试，请遵循以下远程调试流程：
+
+1. 使用MongoDB Atlas控制台查看数据库状态和日志
+2. 通过App Services日志查看后端函数的运行情况
+3. 使用GitHub Actions的日志输出排查部署问题
+4. 为应用添加远程日志记录服务（如Sentry或LogRocket）
+5. 使用App Services内置的调试和监控功能

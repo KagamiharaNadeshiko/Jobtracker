@@ -27,6 +27,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
 
     - name: 启动 MongoDB
       uses: supercharge/mongodb-github-action@1.8.0
@@ -44,15 +45,17 @@ jobs:
     - name: 安装服务器依赖
       id: npm-cache
       run: |
-        npm install  # 只使用常规install，不使用ci
+        npm ci || npm install --no-fund --no-audit
         npm install express-validator@7.0.1 bcryptjs jsonwebtoken --no-save
+      continue-on-error: false
 
     - name: 安装前端依赖
       working-directory: client
       run: |
-        npm install --legacy-peer-deps
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps --no-fund --no-audit
         npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps --no-save
         npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps --no-save
+      continue-on-error: false
 
     - name: 设置 MongoDB 连接
       run: |
@@ -91,11 +94,13 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
 
     - name: 安装依赖
       run: |
-        npm install
+        npm ci || npm install --no-fund --no-audit
         npm install express-validator@7.0.1 bcryptjs jsonwebtoken --no-save
+      continue-on-error: false
 
     - name: 安装 MongoDB Atlas CLI
       id: atlas-cli-setup
@@ -223,7 +228,7 @@ jobs:
     - name: 构建前端
       working-directory: client
       run: |
-        npm install --legacy-peer-deps
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps --no-fund --no-audit
         CI=true npm run build
       env:
         TSC_COMPILE_ON_ERROR: true

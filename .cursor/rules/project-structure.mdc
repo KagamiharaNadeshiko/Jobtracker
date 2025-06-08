@@ -7,6 +7,17 @@ alwaysApply: false
 
 本项目是一个求职跟踪系统，采用MERN技术栈（MongoDB + Express + React + Node.js），并集成了MongoDB Atlas App Services进行后端服务和自动化部署。
 
+## 远程开发环境
+
+**重要：本项目采用完全远程开发模式，不依赖本地调试环境。**
+
+远程开发特性：
+1. 通过GitHub作为主要开发平台
+2. 使用MongoDB Atlas云数据库
+3. 通过App Services部署和托管
+4. 所有测试在CI/CD管道中执行
+5. 使用云端IDE或远程编辑进行代码维护
+
 ## 核心文件
 
 - 服务器入口文件: [server.js](mdc:server.js)
@@ -39,3 +50,22 @@ alwaysApply: false
 - MongoDB App Services - 云函数和认证
 - Github Actions - CI/CD自动化部署
 - Jest - 测试框架
+
+## 远程环境配置
+
+开发和部署使用以下关键环境变量（均在GitHub Secrets中配置）:
+
+- `MONGO_URI` - Atlas集群连接字符串
+- `REALM_APP_ID` - Atlas App Services应用ID
+- `JWT_SECRET` - JWT加密密钥
+- `ATLAS_API_PUBLIC_KEY` - MongoDB Atlas公钥
+- `ATLAS_API_PRIVATE_KEY` - MongoDB Atlas私钥
+
+## 非本地环境访问
+
+所有资源通过以下方式访问：
+- 前端应用：`https://<app-id>.services.cloud.mongodb.com`
+- 数据库：MongoDB Atlas控制台
+- 代码仓库：GitHub
+- 部署状态：GitHub Actions工作流
+- API文档：部署的前端应用中的文档页面
