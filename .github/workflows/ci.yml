@@ -36,11 +36,12 @@ jobs:
         echo "JWT_SECRET=test_secret" >> .env
         echo "JWT_EXPIRE=1d" >> .env
 
-    - name: Install server dependencies
-      run: npm install
-
-    - name: Install express-validator
-      run: npm install express-validator@7.0.1
+    # 安装所有依赖并显式安装express-validator
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install express-validator@7.0.1 bcryptjs jsonwebtoken
+        npm list express-validator
 
     - name: Install frontend dependencies
       run: |
@@ -49,17 +50,34 @@ jobs:
         npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
         npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
 
+    # 确保MongoDB连接脚本被执行
     - name: Set up MongoDB connection
-      run: node .github/scripts/prepare_mongo.js
+      run: |
+        # 确保脚本目录存在
+        mkdir -p .github/scripts
+        # 检查MongoDB连接
+        node .github/scripts/prepare_mongo.js
       env:
         CI: true
         MONGO_URI: mongodb://localhost:27017/jobtracing_test
+        DEBUG: "mongodb:*"
 
-    - name: Run backend tests
-      run: npm test -- __tests__/server.test.js
+    - name: Run backend tests with debug
+      run: |
+        # 打印环境信息
+        npm --version
+        node --version
+        # 检查依赖
+        npm list express-validator
+        npm list bcryptjs
+        npm list jsonwebtoken
+        npm list mongoose
+        # 使用增加的日志运行测试
+        NODE_DEBUG=mongodb,mongoose npm test -- __tests__/server.test.js
       env:
         CI: true
         MONGO_URI: mongodb://localhost:27017/jobtracing_test
+        DEBUG: "mongodb:*,mongoose:*"
 
   deploy:
     needs: build
@@ -74,6 +92,13 @@ jobs:
       with:
         node-version: 18.x
 
+    # 安装所有依赖并显式安装express-validator
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install express-validator@7.0.1 bcryptjs jsonwebtoken
+        npm list express-validator
+
     # 安装MongoDB Atlas CLI
     - name: Install MongoDB Atlas CLI
       run: |
@@ -81,12 +106,6 @@ jobs:
         echo "deb [signed-by=/usr/share/keyrings/mongodb-atlas.gpg] https://mongodb-js.github.io/mongosh/apt stable main" | sudo tee /etc/apt/sources.list.d/mongodb-atlas.list
         sudo apt-get update
         sudo apt-get install -y mongodb-atlas
-
-    # 安装所有依赖，包括express-validator
-    - name: Install dependencies
-      run: |
-        npm install
-        npm install express-validator@7.0.1
 
     # 配置Atlas CLI
     - name: Login to MongoDB Atlas
@@ -121,22 +140,35 @@ jobs:
         echo "Adding global IP access..."
         atlas accessList create --cidr 0.0.0.0/0 --comment "Allow access from anywhere" || true
 
-    # 获取集群主机地址（非SRV格式，避免DNS问题）
-    - name: Get MongoDB Cluster Hosts
-      id: mongo_hosts
+    # 获取集群标准连接字符串（非SRV格式）以避免DNS问题
+    - name: Get MongoDB Cluster Connection
+      id: mongo_connection
       run: |
         CLUSTER_INFO=$(atlas clusters describe jobtracing-cluster --output json)
-        CLUSTER_HOST=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standard' | sed 's|mongodb://||' | sed 's|/.*||')
+        # 获取标准连接字符串
+        STANDARD_URI=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standard')
+        echo "STANDARD_URI=$STANDARD_URI" >> $GITHUB_ENV
+        echo "Found standard connection string"
+        
+        # 同时获取SRV连接字符串作为备用
+        SRV_URI=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standardSrv')
+        echo "SRV_URI=$SRV_URI" >> $GITHUB_ENV
+        echo "Found SRV connection string"
+        
+        # 提取集群主机信息，用于构建非SRV连接
+        CLUSTER_HOST=$(echo $STANDARD_URI | sed 's|mongodb://||' | sed 's|/.*||')
         echo "ATLAS_CLUSTER_HOST=$CLUSTER_HOST" >> $GITHUB_ENV
         echo "Found cluster host: $CLUSTER_HOST"
 
-    # 获取连接字符串
+    # 获取带凭据的连接字符串
     - name: Get MongoDB Connection String
       id: mongo_uri
       run: |
-        # 优先使用标准连接字符串而非SRV格式
-        CONNECTION_STRING=$(atlas clusters connectionString jobtracing-cluster --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }} --type standard)
+        # 构建带凭据的标准连接字符串
+        CONNECTION_STRING="${{ env.STANDARD_URI }}"
+        CONNECTION_STRING=$(echo $CONNECTION_STRING | sed "s|mongodb://|mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@|")
         echo "connection_string=$CONNECTION_STRING" >> $GITHUB_ENV
+        echo "Using standard connection string format"
 
     # 检查并创建Atlas App Services应用
     - name: Create Atlas App Services App (if not exists)
@@ -175,9 +207,6 @@ jobs:
       run: |
         echo "REACT_APP_REALM_APP_ID=${{ env.REALM_APP_ID }}" > client/.env
         echo "REACT_APP_API_URL=https://${{ env.APP_DOMAIN }}/api" >> client/.env
-
-    - name: Install dependencies
-      run: npm install
 
     - name: Build frontend
       run: |
