@@ -1,39 +1,32 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: [true, '用户名不能为空'],
-        unique: true,
-        trim: true
+        required: true,
+        unique: true
     },
     email: {
         type: String,
-        required: [true, '邮箱不能为空'],
-        unique: true,
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            '请提供有效的邮箱地址'
-        ]
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        required: [true, '密码不能为空'],
-        minlength: 6,
+        required: true,
         select: false
     },
     avatar: {
         type: String
     },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date
-}, {
-    timestamps: true
+    date: {
+        type: Date,
+        default: Date.now
+    }
 });
 
-// 密码加密
+// Encrypt password using bcrypt
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) {
         next();
@@ -43,14 +36,7 @@ UserSchema.pre('save', async function(next) {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// 签发JWT
-UserSchema.methods.getSignedJwtToken = function() {
-    return jwt.sign({ id: this._id },
-        process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE }
-    );
-};
-
-// 比对密码
+// Match user entered password to hashed password in database
 UserSchema.methods.matchPassword = async function(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
