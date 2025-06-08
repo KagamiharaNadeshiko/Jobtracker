@@ -39,12 +39,21 @@ jobs:
     - name: Install server dependencies
       run: npm install
 
+    - name: Install express-validator
+      run: npm install express-validator@7.0.1
+
     - name: Install frontend dependencies
       run: |
         cd client
         npm install --legacy-peer-deps
         npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
         npm install ajv@8.12.0 ajv-keywords@5.1.0 --legacy-peer-deps
+
+    - name: Set up MongoDB connection
+      run: node .github/scripts/prepare_mongo.js
+      env:
+        CI: true
+        MONGO_URI: mongodb://localhost:27017/jobtracing_test
 
     - name: Run backend tests
       run: npm test -- __tests__/server.test.js
@@ -73,6 +82,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y mongodb-atlas
 
+    # 安装所有依赖，包括express-validator
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install express-validator@7.0.1
+
     # 配置Atlas CLI
     - name: Login to MongoDB Atlas
       run: |
@@ -85,7 +100,7 @@ jobs:
       run: |
         if ! atlas clusters list --output json | grep -q "jobtracing-cluster"; then
           echo "Creating new MongoDB Atlas cluster..."
-          atlas clusters create jobtracing-cluster --provider AWS --region US_EAST_1 --tier M0 --mdbVersion 5.0 --diskSizeGB 2 --backup false
+          atlas clusters create jobtracing-cluster --provider AWS --region US_EAST_1 --tier M0 --diskSizeGB 2 --backup false
           
           echo "Waiting for cluster to be ready..."
           atlas clusters watch jobtracing-cluster
@@ -106,11 +121,21 @@ jobs:
         echo "Adding global IP access..."
         atlas accessList create --cidr 0.0.0.0/0 --comment "Allow access from anywhere" || true
 
+    # 获取集群主机地址（非SRV格式，避免DNS问题）
+    - name: Get MongoDB Cluster Hosts
+      id: mongo_hosts
+      run: |
+        CLUSTER_INFO=$(atlas clusters describe jobtracing-cluster --output json)
+        CLUSTER_HOST=$(echo $CLUSTER_INFO | jq -r '.connectionStrings.standard' | sed 's|mongodb://||' | sed 's|/.*||')
+        echo "ATLAS_CLUSTER_HOST=$CLUSTER_HOST" >> $GITHUB_ENV
+        echo "Found cluster host: $CLUSTER_HOST"
+
     # 获取连接字符串
     - name: Get MongoDB Connection String
       id: mongo_uri
       run: |
-        CONNECTION_STRING=$(atlas clusters connectionString jobtracing-cluster --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }})
+        # 优先使用标准连接字符串而非SRV格式
+        CONNECTION_STRING=$(atlas clusters connectionString jobtracing-cluster --username ${{ secrets.MONGO_USERNAME }} --password ${{ secrets.MONGO_PASSWORD }} --type standard)
         echo "connection_string=$CONNECTION_STRING" >> $GITHUB_ENV
 
     # 检查并创建Atlas App Services应用
