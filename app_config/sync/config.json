@@ -1,0 +1,177 @@
+{
+    "development_mode_enabled": false,
+    "service_name": "mongodb-atlas",
+    "database_name": "jobtracing",
+    "permissions": {
+        "rules": {
+            "users": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "industries": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "companies": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "positions": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "essays": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "onlinetests": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            },
+            "interviews": {
+                "read": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                },
+                "write": {
+                    "%%true": {
+                        "%function": {
+                            "name": "isOwnDocument",
+                            "arguments": [
+                                "%%user.id",
+                                "%%root.createdBy"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
