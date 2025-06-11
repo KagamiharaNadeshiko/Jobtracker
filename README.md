@@ -1,117 +1,114 @@
-# JobTracing
+# 求职申请管理系统
 
-A job application tracking system built with the MERN stack (MongoDB, Express, React, Node.js) and MongoDB Atlas App Services.
+一款帮助求职者管理求职申请进度的 Web 应用，支持按行业-公司-职位三级管理投递记录，记录 ES（企业特有简历问答）、网测（在线测评）提交期限、类型、进度，以及维护面试记录及结果。
 
-## Project Overview
+## 功能特点
 
-JobTracing helps users track their job applications, including:
-- Industries
-- Companies
-- Positions
-- Application essays
-- Online tests
-- Interviews
+- 按行业 → 公司 → 职位的三级层级管理求职申请
+- 记录企业特有简历问答（ES）内容
+- 跟踪网测信息（截止日期、类型、进度）
+- 维护多轮面试记录（面试官、问答要点、结果）
+- 响应式设计，支持手机和电脑访问
+- 用户认证，确保数据安全
 
-## Quick Start
+## 技术栈
 
-### Prerequisites
-- Node.js 14.x or later
-- MongoDB Atlas account (for database)
-- Git
+### 前端
+- React
+- React Router
+- Tailwind CSS
+- Axios
 
-### Installation
+### 后端
+- Node.js
+- Express
+- Sequelize ORM
+- PostgreSQL
+- JWT 认证
 
-1. Clone the repository
+### 部署
+- Docker
+- Docker Compose
+
+## 本地开发环境设置
+
+### 前提条件
+- Node.js (v14+)
+- PostgreSQL
+- Docker 和 Docker Compose (可选，用于容器化部署)
+
+### 安装步骤
+
+1. 克隆仓库：
+   ```bash
+   git clone https://github.com/yourusername/jobtracing.git
+   cd jobtracing
+   ```
+
+2. 后端设置：
+   ```bash
+   cd backend
+   npm install
+   
+   # 创建 .env 文件并设置环境变量
+   # 示例：
+   # NODE_ENV=development
+   # PORT=8000
+   # JWT_SECRET=your_jwt_secret
+   # DATABASE_URL=postgres://youruser:yourpass@localhost:5432/jobtracker
+   
+   # 启动开发服务器
+   npm run dev
+   ```
+
+3. 前端设置：
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+4. 访问应用：
+   - 前端: http://localhost:3000
+   - 后端 API: http://localhost:8000
+
+## Docker 部署
+
+使用 Docker Compose 快速部署整个应用：
+
 ```bash
-git clone https://github.com/yourusername/jobtracing.git
-cd jobtracing
+docker-compose up -d
 ```
 
-2. Install server dependencies
-```bash
-npm install
-```
+应用将在以下地址可用：
+- 前端: http://localhost:3000
+- 后端 API: http://localhost:8000
 
-3. Install client dependencies
-```bash
-cd client
-npm install
-cd ..
-```
+## API 文档
 
-4. Create a `.env` file in the root directory with the following variables:
-```
-# MongoDB Atlas Connection
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/jobtracing?retryWrites=true&w=majority
+主要 API 端点：
 
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRE=24h
+| 方法   | 路径                             | 描述                      |
+|------|--------------------------------|-------------------------|
+| GET  | /api/industries                | 获取所有行业                  |
+| POST | /api/industries                | 创建新行业                   |
+| GET  | /api/industries/:id            | 获取单个行业详情                |
+| GET  | /api/industries/:iid/companies | 获取行业下的所有公司              |
+| GET  | /api/companies/:id             | 获取公司详情                  |
+| POST | /api/companies                 | 创建新公司                   |
+| GET  | /api/positions/:id             | 获取职位详情                  |
+| POST | /api/positions                 | 创建新职位                   |
+| GET  | /api/positions/:pid/interviews | 获取职位的所有面试记录             |
+| POST | /api/interviews                | 创建新面试记录                 |
 
-# MongoDB Atlas App Services
-REALM_APP_ID=your_realm_app_id_here
+## 贡献指南
 
-# MongoDB Atlas API Keys
-ATLAS_API_PUBLIC_KEY=your_atlas_public_key_here
-ATLAS_API_PRIVATE_KEY=your_atlas_private_key_here
+1. Fork 仓库
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
 
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-```
-
-5. Start the development server
-```bash
-npm run dev
-```
-
-## MongoDB Atlas Setup
-
-1. Create a MongoDB Atlas cluster at [cloud.mongodb.com](https://cloud.mongodb.com)
-2. Create a database user and configure network access
-3. Get your connection string and update the `.env` file
-
-## MongoDB Atlas App Services
-
-The project uses MongoDB Atlas App Services for:
-- Authentication providers (API Key and Email/Password)
-- Backend functions for dashboard statistics and password reset
-- Data synchronization rules for security
-
-### Configuration
-1. Create an App Services app in MongoDB Atlas
-2. Upload the configuration files from the `app_config` directory
-3. Configure authentication providers from `app_config/auth/providers.json`
-4. Set up sync rules from `app_config/sync/config.json`
-5. Deploy backend functions from `app_config/functions/*`
-
-## Remote Deployment
-
-Deployment is handled automatically through GitHub Actions when changes are pushed to the main branch:
-
-1. Add the required secrets to your GitHub repository:
-   - `MONGO_URI` - MongoDB Atlas connection string
-   - `JWT_SECRET` - Secret for JWT token generation
-   - `REALM_APP_ID` - Atlas App Services application ID
-   - `ATLAS_API_PUBLIC_KEY` - MongoDB Atlas public key
-   - `ATLAS_API_PRIVATE_KEY` - MongoDB Atlas private key
-
-2. Push to the main branch to trigger deployment
-
-For detailed deployment instructions, see the [Deployment Guide](docs/deployment-guide.md).
-
-## Development
-
-- Backend API is available at http://localhost:5000
-- Frontend React application is available at http://localhost:3000 
-
-## Testing
-
-Run tests with:
-```bash
-npm test
-```
-
-## License
+## 许可证
 
 MIT 
